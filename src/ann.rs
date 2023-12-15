@@ -1,3 +1,5 @@
+use std::sync::mpsc::Sender;
+
 use nalgebra::SVector;
 
 use crate::activation::Relu;
@@ -13,6 +15,7 @@ pub struct Ann4<
     s1: Sequential<L1, L2, Sigmoid>,
     s2: Sequential<L2, L3, Sigmoid>,
     s3: Sequential<L3, L4, Sigmoid>,
+    debug_channel: Option<Sender<f64>>,
 }
 
 impl<
@@ -22,11 +25,19 @@ impl<
         const L4: usize,
     > Ann4<L1, L2, L3, L4>
 {
-    pub fn new(learn_rate: f64) -> Self {
+    pub fn new(
+        learn_rate: f64,
+        debug_channel: Option<Sender<f64>>,
+    ) -> Self {
         let s1 = Sequential::new(learn_rate, Sigmoid);
         let s2 = Sequential::new(learn_rate, Sigmoid);
         let s3 = Sequential::new(learn_rate, Sigmoid);
-        Self { s1, s2, s3 }
+        Self {
+            s1,
+            s2,
+            s3,
+            debug_channel,
+        }
     }
 
     fn feedforward(
@@ -87,13 +98,18 @@ impl<
             Self::preprocess(x_train, y_train);
         // begin training
         let n = x_train.len();
+        let k = n / 100;
         for i in 0..n {
             let x = x_train[i];
             let y = y_train[i];
             let y_out = self.feedforward(x);
-            let cost = (y - y_out).norm_squared();
-            if i % 10 == 0 {
-                println!("at i = {i}, cost = {cost}");
+            if let Some(channel) =
+                self.debug_channel.as_ref()
+            {
+                if i % k == 0 {
+                    let cost = (y - y_out).norm_squared();
+                    channel.send(cost).unwrap();
+                }
             }
             self.backprop(y_out, y);
         }
