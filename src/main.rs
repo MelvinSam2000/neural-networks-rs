@@ -4,12 +4,13 @@ use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 
-use crate::ann::Ann4;
+use crate::ann4::Ann4;
 use crate::dataset::get_data_csv;
 
 pub mod activation;
-pub mod ann;
+pub mod ann4;
 pub mod dataset;
+pub mod rnncell;
 pub mod sequential;
 
 fn train_and_validate<
