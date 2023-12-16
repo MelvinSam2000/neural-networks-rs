@@ -2,7 +2,7 @@ use std::sync::mpsc::Sender;
 
 use nalgebra::SVector;
 
-use crate::activation::Relu;
+//use crate::activation::Relu;
 use crate::activation::Sigmoid;
 use crate::sequential::Sequential;
 

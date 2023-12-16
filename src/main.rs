@@ -51,7 +51,7 @@ fn write_costs_to_file(
     }
     let mut destfile =
         File::create(&format!("debug/{csv_file}"))
-            .expect("Could not open file for debug costs");
+            .expect("Please run 'mkdir debug'");
     for cost in costs {
         writeln!(destfile, "{}", cost).unwrap();
     }
@@ -71,7 +71,7 @@ fn main() {
         || {
             let (tx, rx) = mpsc::channel();
             train_and_validate::<2, 7, 10, 3>(
-                0.8,
+                0.99,
                 "data/gda.csv",
                 Some(tx),
             );
