@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use nalgebra::SMatrix;
 use nalgebra::SVector;
 use rand::Rng;
@@ -19,7 +21,7 @@ pub struct RnnCell<
     wh: SMatrix<f64, H, H>,
     wy: SMatrix<f64, Y, H>,
     learn_rate: f64,
-    act: F,
+    act: PhantomData<F>,
 }
 
 impl<
@@ -32,10 +34,7 @@ impl<
 where
     F: ActivationFunction<H>,
 {
-    pub fn new(
-        learn_rate: f64,
-        activation_function: F,
-    ) -> Self {
+    pub fn new(learn_rate: f64) -> Self {
         let x = [SVector::zeros(); T];
         let y = [SVector::zeros(); T];
         let h = [SVector::zeros(); T];
@@ -64,7 +63,7 @@ where
             }
         }
 
-        let act = activation_function;
+        let act = PhantomData;
 
         Self {
             x,
@@ -80,7 +79,10 @@ where
     }
 
     // feedforward
-    pub fn ff(&mut self, x: [SVector<f64, X>; T]) {
+    pub fn ff(
+        &mut self,
+        x: [SVector<f64, X>; T],
+    ) -> [SVector<f64, Y>; T] {
         self.x = x;
         for t in 0..T {
             self.z[t] = self.wx * self.x[t]
@@ -89,13 +91,18 @@ where
                 } else {
                     SVector::zeros()
                 };
-            self.h[t] = self.act.func(&self.z[t]);
+            self.h[t] = F::func(&self.z[t]);
             self.y[t] = self.wy * self.h[t];
         }
+        self.y.clone()
     }
 
     // backprop
-    pub fn bp(&mut self, gl: [SVector<f64, Y>; T]) {
+    pub fn bp(
+        &mut self,
+        gl: [SVector<f64, Y>; T],
+    ) -> [SVector<f64, X>; T] {
+        let wx_old = self.wx.clone();
         let wy_old = self.wy.clone();
         let wh_old = self.wh.clone();
 
@@ -108,9 +115,10 @@ where
 
         // update Wx and Wh
         let mut g = SVector::zeros();
+        let mut gout = [SVector::zeros(); T];
         for t in (0..T).rev() {
             let dht_dzt = SMatrix::from_diagonal(
-                &self.act.deriv(&self.z[t]),
+                &F::deriv(&self.z[t]),
             );
             let g_tmp =
                 dht_dzt * (wy_old.transpose() * gl[t] + &g);
@@ -122,7 +130,9 @@ where
                     * g_tmp
                     * self.h[t - 1].transpose();
             }
+            gout[t] = wx_old.transpose() * g_tmp;
             g += wh_old.transpose() * g_tmp;
         }
+        gout
     }
 }

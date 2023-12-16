@@ -2,9 +2,8 @@ use std::sync::mpsc::Sender;
 
 use nalgebra::SVector;
 
-//use crate::activation::Relu;
-use crate::activation::Sigmoid;
-use crate::sequential::Sequential;
+use crate::activation::sigmoid::Sigmoid;
+use crate::layers::sequential::Sequential;
 
 pub struct Ann4<
     const L1: usize,
@@ -29,9 +28,9 @@ impl<
         learn_rate: f64,
         debug_channel: Option<Sender<f64>>,
     ) -> Self {
-        let s1 = Sequential::new(learn_rate, Sigmoid);
-        let s2 = Sequential::new(learn_rate, Sigmoid);
-        let s3 = Sequential::new(learn_rate, Sigmoid);
+        let s1 = Sequential::new(learn_rate);
+        let s2 = Sequential::new(learn_rate);
+        let s3 = Sequential::new(learn_rate);
         Self {
             s1,
             s2,
@@ -40,7 +39,7 @@ impl<
         }
     }
 
-    fn feedforward(
+    pub fn feedforward(
         &mut self,
         x: SVector<f64, L1>,
     ) -> SVector<f64, L4> {
@@ -51,7 +50,7 @@ impl<
         a
     }
 
-    fn backprop(
+    pub fn backprop(
         &mut self,
         y_output: SVector<f64, L4>,
         y_test: SVector<f64, L4>,

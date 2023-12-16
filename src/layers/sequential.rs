@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use nalgebra::SMatrix;
 use nalgebra::SVector;
 use rand::Rng;
@@ -10,7 +12,7 @@ pub struct Sequential<const L1: usize, const L2: usize, F> {
     b: SVector<f64, L2>,
     z: SVector<f64, L2>,
     learn_rate: f64,
-    act: F,
+    act: PhantomData<F>,
 }
 
 impl<const L1: usize, const L2: usize, F>
@@ -18,15 +20,11 @@ impl<const L1: usize, const L2: usize, F>
 where
     F: ActivationFunction<L2>,
 {
-    pub fn new(
-        learn_rate: f64,
-        activation_function: F,
-    ) -> Self {
+    pub fn new(learn_rate: f64) -> Self {
         let a = SVector::zeros();
         let mut w = SMatrix::zeros();
         let mut b = SVector::zeros();
         let z = SVector::zeros();
-        let act = activation_function;
 
         // randomize W and b
         let mut rng = rand::thread_rng();
@@ -37,6 +35,8 @@ where
             }
             b[i] = rng.sample(uniform);
         }
+
+        let act = PhantomData;
 
         Self {
             a,
@@ -55,7 +55,7 @@ where
     ) -> SVector<f64, L2> {
         self.a = a;
         self.z = self.w * self.a + self.b;
-        self.act.func(&self.z)
+        F::func(&self.z)
     }
 
     // backprop
@@ -63,9 +63,8 @@ where
         &mut self,
         mut g: SVector<f64, L2>,
     ) -> SVector<f64, L1> {
-        let dadz = SMatrix::from_diagonal(
-            &self.act.deriv(&self.z),
-        );
+        let dadz =
+            SMatrix::from_diagonal(&F::deriv(&self.z));
         g = dadz * g;
         let w_copy = self.w.clone();
         let dzdw = &g * self.a.transpose();
