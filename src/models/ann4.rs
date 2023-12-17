@@ -1,9 +1,11 @@
+use std::marker::PhantomData;
 use std::sync::mpsc::Sender;
 
 use nalgebra::SVector;
 
 use crate::activation::ActivationFunction;
 use crate::layers::sequential::Sequential;
+use crate::loss::LossFunction;
 
 pub struct Ann4<
     const L1: usize,
@@ -13,11 +15,13 @@ pub struct Ann4<
     F1,
     F2,
     F3,
+    LOSS,
 > {
     s1: Sequential<L1, L2, F1>,
     s2: Sequential<L2, L3, F2>,
     s3: Sequential<L3, L4, F3>,
     debug_channel: Option<Sender<f64>>,
+    loss: PhantomData<LOSS>,
 }
 
 impl<
@@ -28,11 +32,13 @@ impl<
         F1,
         F2,
         F3,
-    > Ann4<L1, L2, L3, L4, F1, F2, F3>
+        LOSS,
+    > Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS>
 where
     F1: ActivationFunction<L2>,
     F2: ActivationFunction<L3>,
     F3: ActivationFunction<L4>,
+    LOSS: LossFunction<L4>,
 {
     pub fn new(
         learn_rate: f64,
@@ -41,11 +47,13 @@ where
         let s1 = Sequential::new(learn_rate);
         let s2 = Sequential::new(learn_rate);
         let s3 = Sequential::new(learn_rate);
+        let loss = PhantomData;
         Self {
             s1,
             s2,
             s3,
             debug_channel,
+            loss,
         }
     }
 
@@ -65,7 +73,7 @@ where
         y_output: SVector<f64, L4>,
         y_test: SVector<f64, L4>,
     ) {
-        let g = y_output - y_test;
+        let g = LOSS::grad(y_output, y_test);
         let g = self.s3.bp(g);
         let g = self.s2.bp(g);
         self.s1.bp(g);
@@ -116,7 +124,7 @@ where
                 self.debug_channel.as_ref()
             {
                 if i % k == 0 {
-                    let cost = (y - y_out).norm_squared();
+                    let cost = LOSS::func(y_out, y);
                     channel.send(cost).unwrap();
                 }
             }
