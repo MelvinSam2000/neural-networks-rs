@@ -2,7 +2,7 @@ use std::sync::mpsc::Sender;
 
 use nalgebra::SVector;
 
-use crate::activation::sigmoid::Sigmoid;
+use crate::activation::ActivationFunction;
 use crate::layers::sequential::Sequential;
 
 pub struct Ann4<
@@ -10,10 +10,13 @@ pub struct Ann4<
     const L2: usize,
     const L3: usize,
     const L4: usize,
+    F1,
+    F2,
+    F3,
 > {
-    s1: Sequential<L1, L2, Sigmoid>,
-    s2: Sequential<L2, L3, Sigmoid>,
-    s3: Sequential<L3, L4, Sigmoid>,
+    s1: Sequential<L1, L2, F1>,
+    s2: Sequential<L2, L3, F2>,
+    s3: Sequential<L3, L4, F3>,
     debug_channel: Option<Sender<f64>>,
 }
 
@@ -22,7 +25,14 @@ impl<
         const L2: usize,
         const L3: usize,
         const L4: usize,
-    > Ann4<L1, L2, L3, L4>
+        F1,
+        F2,
+        F3,
+    > Ann4<L1, L2, L3, L4, F1, F2, F3>
+where
+    F1: ActivationFunction<L2>,
+    F2: ActivationFunction<L3>,
+    F3: ActivationFunction<L4>,
 {
     pub fn new(
         learn_rate: f64,

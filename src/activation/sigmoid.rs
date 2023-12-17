@@ -1,3 +1,4 @@
+use nalgebra::SMatrix;
 use nalgebra::SVector;
 
 use super::ActivationFunction;
@@ -16,11 +17,11 @@ impl<const N: usize> ActivationFunction<N> for Sigmoid {
         SVector::from_iterator(out)
     }
 
-    fn deriv(v: &SVector<f64, N>) -> SVector<f64, N> {
+    fn grad(v: &SVector<f64, N>) -> SMatrix<f64, N, N> {
         let out = v.iter().copied().map(|x| {
             let y = Self::sigmoid(x);
             y * (1. - y)
         });
-        SVector::from_iterator(out)
+        SMatrix::from_diagonal(&SVector::from_iterator(out))
     }
 }

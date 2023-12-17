@@ -4,6 +4,11 @@ use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 
+use activation::relu::Relu;
+use activation::sigmoid::Sigmoid;
+use activation::softmax::Softmax;
+use activation::ActivationFunction;
+
 use crate::dataset::get_data_csv;
 use crate::models::ann4::Ann4;
 
@@ -17,6 +22,9 @@ fn train_and_validate<
     const L2: usize,
     const L3: usize,
     const L4: usize,
+    F1: ActivationFunction<L2>,
+    F2: ActivationFunction<L3>,
+    F3: ActivationFunction<L4>,
 >(
     learn_rate: f64,
     csv_file: &str,
@@ -25,11 +33,12 @@ fn train_and_validate<
     let (x_train, y_train, x_test, y_test) =
         get_data_csv(csv_file, 0.8)
             .expect("Could not read data from csv file");
-    let mut model = Ann4::<L1, L2, L3, L3>::new(
+    let mut model = Ann4::<L1, L2, L3, L4, F1, F2, F3>::new(
         learn_rate,
         debug_channel,
     );
 
+    model.train(&x_train, &y_train);
     model.train(&x_train, &y_train);
     let score = model.validate(&x_test, &y_test);
 
@@ -61,47 +70,69 @@ fn main() {
     let tasks = vec![
         || {
             let (tx, rx) = mpsc::channel();
-            train_and_validate::<2, 4, 6, 3>(
-                0.8,
-                "data/knn.csv",
-                Some(tx),
-            );
+            train_and_validate::<
+                2,
+                4,
+                6,
+                3,
+                Relu,
+                Sigmoid,
+                Softmax,
+            >(0.8, "data/knn.csv", Some(tx));
             write_costs_to_file("knn.csv", rx);
         },
         || {
             let (tx, rx) = mpsc::channel();
-            train_and_validate::<2, 7, 10, 3>(
-                0.99,
-                "data/gda.csv",
-                Some(tx),
-            );
+            train_and_validate::<
+                2,
+                7,
+                10,
+                3,
+                Relu,
+                Sigmoid,
+                Softmax,
+            >(0.99, "data/gda.csv", Some(tx));
             write_costs_to_file("gda.csv", rx);
         },
         || {
             let (tx, rx) = mpsc::channel();
-            train_and_validate::<8, 10, 6, 2>(
-                0.001,
-                "data/nb.csv",
-                Some(tx),
-            );
+            train_and_validate::<
+                8,
+                10,
+                6,
+                2,
+                Relu,
+                Sigmoid,
+                Sigmoid,
+            >(0.001, "data/nb.csv", Some(tx));
             write_costs_to_file("nb.csv", rx);
         },
         || {
             let (tx, rx) = mpsc::channel();
-            train_and_validate::<2, 12, 14, 2>(
-                0.8,
-                "data/neg_square.csv",
-                Some(tx),
+            train_and_validate::<
+                2,
+                12,
+                14,
+                2,
+                Relu,
+                Sigmoid,
+                Sigmoid,
+            >(
+                0.8, "data/neg_square.csv", Some(tx)
             );
             write_costs_to_file("neg_square.csv", rx);
         },
         || {
             let (tx, rx) = mpsc::channel();
-            train_and_validate::<2, 15, 13, 2>(
-                0.5,
-                "data/circle.csv",
-                Some(tx),
-            );
+            train_and_validate::<
+                2,
+                15,
+                13,
+                2,
+                Relu,
+                Sigmoid,
+                Sigmoid,
+            >(0.5, "data/circle.csv", Some(tx));
             write_costs_to_file("circle.csv", rx);
         },
     ];

@@ -117,11 +117,8 @@ where
         let mut g = SVector::zeros();
         let mut gout = [SVector::zeros(); T];
         for t in (0..T).rev() {
-            let dht_dzt = SMatrix::from_diagonal(
-                &F::deriv(&self.z[t]),
-            );
-            let g_tmp =
-                dht_dzt * (wy_old.transpose() * gl[t] + &g);
+            let g_tmp = F::grad(&self.z[t])
+                * (wy_old.transpose() * gl[t] + &g);
             self.wx -= self.learn_rate
                 * g_tmp
                 * self.x[t].transpose();

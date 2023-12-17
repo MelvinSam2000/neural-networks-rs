@@ -63,9 +63,7 @@ where
         &mut self,
         mut g: SVector<f64, L2>,
     ) -> SVector<f64, L1> {
-        let dadz =
-            SMatrix::from_diagonal(&F::deriv(&self.z));
-        g = dadz * g;
+        g = F::grad(&self.z) * g;
         let w_copy = self.w.clone();
         let dzdw = &g * self.a.transpose();
         self.w -= self.learn_rate * dzdw;
