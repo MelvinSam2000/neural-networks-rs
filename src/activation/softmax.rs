@@ -26,6 +26,6 @@ impl<const N: usize> ActivationFunction<N> for Softmax {
                 };
             }
         }
-        out.transpose()
+        out
     }
 }
