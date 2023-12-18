@@ -28,7 +28,7 @@ where
 
         // randomize W and b
         let mut rng = rand::thread_rng();
-        let uniform = rand_distr::Uniform::new(-1.0, 1.0);
+        let uniform = rand_distr::Uniform::new(-0.5, 0.5);
         for i in 0..L2 {
             for j in 0..L1 {
                 w[(i, j)] = rng.sample(uniform);

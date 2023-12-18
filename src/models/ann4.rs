@@ -123,7 +123,7 @@ where
             if let Some(channel) =
                 self.debug_channel.as_ref()
             {
-                if i % k == 0 {
+                if n < 100 || i % k == 0 {
                     let cost = LOSS::func(y_out, y);
                     channel.send(cost).unwrap();
                 }

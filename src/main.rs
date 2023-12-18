@@ -1,3 +1,5 @@
+#![feature(generic_const_exprs)]
+
 use std::fs::File;
 use std::io::Write;
 use std::sync::mpsc;
@@ -45,7 +47,6 @@ fn train_and_validate<
         );
 
     model.train(&x_train, &y_train);
-    model.train(&x_train, &y_train);
     let score = model.validate(&x_test, &y_test);
 
     println!(
@@ -81,7 +82,7 @@ fn main() {
                 4,
                 6,
                 3,
-                Relu,
+                Sigmoid,
                 Sigmoid,
                 Softmax,
                 CrossEntropy,
@@ -96,10 +97,10 @@ fn main() {
                 10,
                 3,
                 Relu,
-                Sigmoid,
+                Relu,
                 Softmax,
-                Mse,
-            >(0.99, "data/gda.csv", Some(tx));
+                CrossEntropy,
+            >(0.001, "data/gda.csv", Some(tx));
             write_costs_to_file("gda.csv", rx);
         },
         || {
@@ -125,8 +126,8 @@ fn main() {
                 2,
                 Relu,
                 Sigmoid,
-                Sigmoid,
-                Mse,
+                Softmax,
+                CrossEntropy,
             >(
                 0.8, "data/neg_square.csv", Some(tx)
             );
@@ -141,7 +142,7 @@ fn main() {
                 2,
                 Relu,
                 Sigmoid,
-                Sigmoid,
+                Softmax,
                 CrossEntropy,
             >(0.5, "data/circle.csv", Some(tx));
             write_costs_to_file("circle.csv", rx);

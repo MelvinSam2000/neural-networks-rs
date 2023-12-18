@@ -31,7 +31,7 @@ impl<const N: usize, const X: usize, const Y: usize>
         &mut self,
         words: String,
     ) -> SVector<f64, Y> {
-        let x = self.embedding.embed(words);
+        let x = self.embedding.embed(&words);
         let x = self.rnn.ff(x);
         let x = Self::flatten(x);
         let x = self.s1.ff(x);
