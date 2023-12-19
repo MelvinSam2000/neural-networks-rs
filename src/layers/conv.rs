@@ -62,9 +62,9 @@ impl<
     // feedforward
     pub fn ff(
         &mut self,
-        x: SMatrix<f64, RX, CX>,
+        x: &SMatrix<f64, RX, CX>,
     ) -> SMatrix<f64, RY, CY> {
-        self.x = x;
+        self.x = x.clone();
         self.y = conv::<RX, CX, RW, CW, RY, CY>(
             &self.x, &self.w,
         );

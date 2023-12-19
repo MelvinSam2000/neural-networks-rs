@@ -1,0 +1,134 @@
+use nalgebra::SMatrix;
+use nalgebra::SVector;
+
+use crate::activation::sigmoid::Sigmoid;
+use crate::activation::softmax::Softmax;
+use crate::layers::conv::Conv2d;
+use crate::layers::maxpool::MaxPool2d;
+use crate::layers::sequential::Sequential;
+use crate::loss::crossent::CrossEntropy;
+use crate::loss::LossFunction;
+
+const MNIST_IMAGE_DIM: usize = 28;
+const POST_CONV_DIM: usize = 20;
+const CONV_WEIGHT_DIM: usize =
+    MNIST_IMAGE_DIM - POST_CONV_DIM;
+
+const POST_POOL_DIM: usize = 15;
+const POOL_FILTER_DIM: usize =
+    POST_CONV_DIM - POST_POOL_DIM;
+
+const NUM_CONV: usize = 10;
+
+const SEQ_LAYER_INITIAL_DIM: usize =
+    POST_POOL_DIM * POST_POOL_DIM * NUM_CONV;
+
+const DIGITS: usize = 10;
+
+pub struct MyCnn {
+    conv: [Conv2d<
+        MNIST_IMAGE_DIM,
+        MNIST_IMAGE_DIM,
+        POST_CONV_DIM,
+        POST_CONV_DIM,
+        CONV_WEIGHT_DIM,
+        CONV_WEIGHT_DIM,
+    >; NUM_CONV],
+    maxpool: [MaxPool2d<
+        POST_CONV_DIM,
+        POST_CONV_DIM,
+        POST_POOL_DIM,
+        POST_POOL_DIM,
+        POOL_FILTER_DIM,
+        POOL_FILTER_DIM,
+    >; NUM_CONV],
+    s1: Sequential<SEQ_LAYER_INITIAL_DIM, 1000, Sigmoid>,
+    s2: Sequential<1000, 500, Sigmoid>,
+    s3: Sequential<500, 100, Sigmoid>,
+    s4: Sequential<100, DIGITS, Softmax>,
+}
+
+impl MyCnn {
+    pub fn new(learn_rate: f64) -> Self {
+        todo!()
+    }
+
+    fn feedforward(
+        &mut self,
+        image_bitmap: &SMatrix<
+            f64,
+            MNIST_IMAGE_DIM,
+            MNIST_IMAGE_DIM,
+        >,
+    ) -> SVector<f64, DIGITS> {
+        let x = image_bitmap;
+
+        let mut conv_results = [SMatrix::zeros(); NUM_CONV];
+        for i in 0..NUM_CONV {
+            let x = self.conv[i].ff(x);
+            let x = self.maxpool[i].ff(x);
+            conv_results[i] = x;
+        }
+        let x = Self::flatten(conv_results);
+        let x = self.s1.ff(x);
+        let x = self.s2.ff(x);
+        let x = self.s3.ff(x);
+        let x = self.s4.ff(x);
+        x
+    }
+
+    fn backprop(
+        &mut self,
+        y_out: SVector<f64, DIGITS>,
+        y_test: SVector<f64, DIGITS>,
+    ) {
+        let g = CrossEntropy::grad(y_out, y_test);
+        let g = self.s4.bp(g);
+        let g = self.s3.bp(g);
+        let g = self.s2.bp(g);
+        let g = self.s1.bp(g);
+        let g = Self::unflatten(g);
+        for i in 0..NUM_CONV {
+            let g = self.maxpool[i].bp(g[i]);
+            self.conv[i].bp(g);
+        }
+    }
+
+    fn flatten(
+        v: [SMatrix<f64, POST_POOL_DIM, POST_POOL_DIM>;
+            NUM_CONV],
+    ) -> SVector<f64, SEQ_LAYER_INITIAL_DIM> {
+        let mut out = SVector::zeros();
+        for k in 0..NUM_CONV {
+            for i in 0..POST_CONV_DIM {
+                for j in 0..POST_CONV_DIM {
+                    out[k
+                        * POST_CONV_DIM
+                        * POST_CONV_DIM
+                        + i * POST_CONV_DIM
+                        + j] = v[k][(i, j)];
+                }
+            }
+        }
+        out
+    }
+
+    fn unflatten(
+        v: SVector<f64, SEQ_LAYER_INITIAL_DIM>,
+    ) -> [SMatrix<f64, POST_POOL_DIM, POST_POOL_DIM>;
+           NUM_CONV] {
+        let mut out = [SMatrix::zeros(); NUM_CONV];
+        for k in 0..NUM_CONV {
+            for i in 0..POST_CONV_DIM {
+                for j in 0..POST_CONV_DIM {
+                    out[k][(i, j)] = v[k
+                        * POST_CONV_DIM
+                        * POST_CONV_DIM
+                        + i * POST_CONV_DIM
+                        + j];
+                }
+            }
+        }
+        out
+    }
+}
