@@ -1,4 +1,4 @@
-#![feature(generic_const_exprs)]
+#![feature(maybe_uninit_uninit_array, maybe_uninit_slice)]
 
 use std::fs::File;
 use std::io::Write;
@@ -16,6 +16,7 @@ use loss::LossFunction;
 
 use crate::dataset::get_data_csv;
 use crate::models::ann4::Ann4;
+use crate::models::NNClassifierModel;
 
 pub mod activation;
 pub mod dataset;
@@ -40,12 +41,33 @@ fn train_and_validate<
     let (x_train, y_train, x_test, y_test) =
         get_data_csv(csv_file, 0.8)
             .expect("Could not read data from csv file");
-    let mut model =
-        Ann4::<L1, L2, L3, L4, F1, F2, F3, LOSS>::new(
-            learn_rate,
-            debug_channel,
-        );
 
+    let (x_train, y_train) = Ann4::<
+        L1,
+        L2,
+        L3,
+        L4,
+        F1,
+        F2,
+        F3,
+        LOSS,
+    >::preprocess(
+        &x_train, &y_train
+    );
+    let (x_test, _) = Ann4::<
+        L1,
+        L2,
+        L3,
+        L4,
+        F1,
+        F2,
+        F3,
+        LOSS,
+    >::preprocess(&x_test, &y_test);
+    let mut model = NNClassifierModel::<
+        Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS>,
+        L4,
+    >::new(learn_rate, debug_channel);
     model.train(&x_train, &y_train);
     let score = model.validate(&x_test, &y_test);
 
@@ -124,12 +146,12 @@ fn main() {
                 12,
                 14,
                 2,
-                Relu,
+                Sigmoid,
                 Sigmoid,
                 Softmax,
                 CrossEntropy,
             >(
-                0.8, "data/neg_square.csv", Some(tx)
+                0.5, "data/neg_square.csv", Some(tx)
             );
             write_costs_to_file("neg_square.csv", rx);
         },

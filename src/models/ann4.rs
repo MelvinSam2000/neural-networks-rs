@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
-use std::sync::mpsc::Sender;
 
 use nalgebra::SVector;
 
+use super::NeuralNetwork;
 use crate::activation::ActivationFunction;
 use crate::layers::sequential::Sequential;
 use crate::loss::LossFunction;
@@ -20,8 +20,64 @@ pub struct Ann4<
     s1: Sequential<L1, L2, F1>,
     s2: Sequential<L2, L3, F2>,
     s3: Sequential<L3, L4, F3>,
-    debug_channel: Option<Sender<f64>>,
     loss: PhantomData<LOSS>,
+}
+
+impl<
+        const L1: usize,
+        const L2: usize,
+        const L3: usize,
+        const L4: usize,
+        F1,
+        F2,
+        F3,
+        LOSS,
+    > NeuralNetwork<L4>
+    for Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS>
+where
+    F1: ActivationFunction<L2>,
+    F2: ActivationFunction<L3>,
+    F3: ActivationFunction<L4>,
+    LOSS: LossFunction<L4>,
+{
+    type ModelInput = SVector<f64, L1>;
+
+    fn new(learn_rate: f64) -> Self {
+        let s1 = Sequential::new(learn_rate);
+        let s2 = Sequential::new(learn_rate);
+        let s3 = Sequential::new(learn_rate);
+        let loss = PhantomData;
+        Self { s1, s2, s3, loss }
+    }
+
+    fn feedforward(
+        &mut self,
+        x: Self::ModelInput,
+    ) -> SVector<f64, L4> {
+        let a = x;
+        let a = self.s1.ff(a);
+        let a = self.s2.ff(a);
+        let a = self.s3.ff(a);
+        a
+    }
+
+    fn backprop(
+        &mut self,
+        y_out: SVector<f64, L4>,
+        y_test: SVector<f64, L4>,
+    ) {
+        let g = LOSS::grad(y_out, y_test);
+        let g = self.s3.bp(g);
+        let g = self.s2.bp(g);
+        self.s1.bp(g);
+    }
+
+    fn loss(
+        y_out: &SVector<f64, L4>,
+        y_test: &SVector<f64, L4>,
+    ) -> f64 {
+        LOSS::func(y_out.clone(), y_test.clone())
+    }
 }
 
 impl<
@@ -40,46 +96,7 @@ where
     F3: ActivationFunction<L4>,
     LOSS: LossFunction<L4>,
 {
-    pub fn new(
-        learn_rate: f64,
-        debug_channel: Option<Sender<f64>>,
-    ) -> Self {
-        let s1 = Sequential::new(learn_rate);
-        let s2 = Sequential::new(learn_rate);
-        let s3 = Sequential::new(learn_rate);
-        let loss = PhantomData;
-        Self {
-            s1,
-            s2,
-            s3,
-            debug_channel,
-            loss,
-        }
-    }
-
-    pub fn feedforward(
-        &mut self,
-        x: SVector<f64, L1>,
-    ) -> SVector<f64, L4> {
-        let a = x;
-        let a = self.s1.ff(a);
-        let a = self.s2.ff(a);
-        let a = self.s3.ff(a);
-        a
-    }
-
-    pub fn backprop(
-        &mut self,
-        y_output: SVector<f64, L4>,
-        y_test: SVector<f64, L4>,
-    ) {
-        let g = LOSS::grad(y_output, y_test);
-        let g = self.s3.bp(g);
-        let g = self.s2.bp(g);
-        self.s1.bp(g);
-    }
-
-    fn preprocess(
+    pub fn preprocess(
         x: &[[f64; L1]],
         y: &[usize],
     ) -> (Vec<SVector<f64, L1>>, Vec<SVector<f64, L4>>)
@@ -97,86 +114,5 @@ where
             })
             .collect();
         (x, y)
-    }
-
-    pub fn train(
-        &mut self,
-        x_train: &[[f64; L1]],
-        y_train: &[usize],
-    ) {
-        if x_train.len() != y_train.len() {
-            panic!(
-                "x_train and y_train have different sizes \
-                 of samples"
-            );
-        }
-
-        let (x_train, y_train) =
-            Self::preprocess(x_train, y_train);
-        // begin training
-        let n = x_train.len();
-        let k = n / 100;
-        for i in 0..n {
-            let x = x_train[i];
-            let y = y_train[i];
-            let y_out = self.feedforward(x);
-            if let Some(channel) =
-                self.debug_channel.as_ref()
-            {
-                if n < 100 || i % k == 0 {
-                    let cost = LOSS::func(y_out, y);
-                    channel.send(cost).unwrap();
-                }
-            }
-            self.backprop(y_out, y);
-        }
-    }
-
-    pub fn predict(
-        &mut self,
-        x: &SVector<f64, L1>,
-    ) -> usize {
-        let y = self.feedforward(*x);
-        y.iter()
-            .enumerate()
-            .reduce(|(max_y, max_prob), (y, prob)| {
-                if prob > max_prob {
-                    (y, prob)
-                } else {
-                    (max_y, max_prob)
-                }
-            })
-            .unwrap()
-            .0
-    }
-
-    pub fn validate(
-        &mut self,
-        x_test: &[[f64; L1]],
-        y_test: &[usize],
-    ) -> f64 {
-        if x_test.len() != y_test.len() {
-            panic!(
-                "x_test and y_test have different sizes \
-                 of samples"
-            );
-        }
-
-        let x_test: Vec<SVector<f64, L1>> = x_test
-            .iter()
-            .map(|x| SVector::from_column_slice(x))
-            .collect();
-
-        let n = x_test.len();
-        let count: f64 = (0..n)
-            .map(|i| {
-                if self.predict(&x_test[i]) == y_test[i] {
-                    1.
-                } else {
-                    0.
-                }
-            })
-            .sum();
-        count / n as f64
     }
 }
