@@ -59,7 +59,8 @@ where
         }
         // begin training
         let n = x_train.len();
-        let k = n / 100;
+        const M: usize = 200;
+        let k = n / M;
         for i in 0..n {
             let x = x_train[i];
             let y = y_train[i];
@@ -68,7 +69,7 @@ where
             if let Some(channel) =
                 self.debug_channel.as_ref()
             {
-                if n < 100 || i % k == 0 {
+                if n < M || i % k == 0 {
                     let cost = T::loss(&y_out, &y);
                     channel.send(cost).unwrap();
                 }

@@ -13,9 +13,18 @@ use activation::ActivationFunction;
 use loss::crossent::CrossEntropy;
 use loss::mse::Mse;
 use loss::LossFunction;
+use mnist::MnistBuilder;
+use models::cnn::DIGITS;
+use models::cnn::MNIST_IMAGE_DIM;
+use nalgebra::SMatrix;
+use nalgebra::SVector;
+use ndarray::Array2;
+use ndarray::Array3;
+use rand_distr::num_traits::Zero;
 
 use crate::dataset::get_data_csv;
 use crate::models::ann4::Ann4;
+use crate::models::cnn::MyCnn;
 use crate::models::NNClassifierModel;
 
 pub mod activation;
@@ -79,16 +88,13 @@ fn train_and_validate<
     );
 }
 
-fn write_costs_to_file(
-    csv_file: &str,
-    recv: Receiver<f64>,
-) {
+fn write_costs_to_file(file: &str, recv: Receiver<f64>) {
     let mut costs = vec![];
     while let Ok(cost) = recv.recv() {
         costs.push(cost);
     }
     let mut destfile =
-        File::create(&format!("debug/{csv_file}"))
+        File::create(&format!("debug/{file}.txt"))
             .expect("Please run 'mkdir debug'");
     for cost in costs {
         writeln!(destfile, "{}", cost).unwrap();
@@ -96,6 +102,18 @@ fn write_costs_to_file(
 }
 
 fn main() {
+    let cmd = std::env::args()
+        .skip(1)
+        .next()
+        .expect("No CLI argument supplied");
+    match cmd.as_str() {
+        "ann" => train_and_validate_csv_ann(),
+        "cnn" => train_and_validate_mnist_cnn(),
+        _ => eprintln!("Invalid cmd provided"),
+    };
+}
+
+fn train_and_validate_csv_ann() {
     let tasks = vec![
         || {
             let (tx, rx) = mpsc::channel();
@@ -176,4 +194,128 @@ fn main() {
         .for_each(|task| {
             task.join().expect("A task failed")
         });
+}
+
+fn preprocess_narray_to_nalgebra(
+    x_nd: Array3<f64>,
+    y_nd: Array2<f64>,
+) -> (
+    Vec<SMatrix<f64, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>>,
+    Vec<SVector<f64, DIGITS>>,
+) {
+    let (n, r, c) = x_nd.dim();
+    let mut x_out = vec![];
+    let mut y_out = vec![];
+    for k in 0..n {
+        let mut x = SMatrix::zeros();
+        for i in 0..r {
+            for j in 0..c {
+                x[(i, j)] = x_nd[[k, i, j]];
+            }
+        }
+        x_out.push(x);
+        let mut y = SVector::zero();
+        y[y_nd[[k, 0]] as usize % 10] = 1.0;
+        y_out.push(y);
+    }
+    (x_out, y_out)
+}
+
+fn train_and_validate_mnist_cnn() {
+    let (tx, rx) = mpsc::channel();
+
+    let mut model =
+        NNClassifierModel::<MyCnn, 10>::new(0.1, Some(tx));
+
+    let dbg_thread = std::thread::spawn(move || {
+        write_costs_to_file("cnn.txt", rx);
+    });
+
+    println!("CNN Model created");
+
+    const TRAINING_DATASET: usize = 20000;
+    const TEST_DATASET: usize = 2000;
+
+    let mnist = Box::new(
+        MnistBuilder::new()
+            .download_and_extract()
+            .label_format_digit()
+            .training_set_length(TRAINING_DATASET as u32)
+            .test_set_length(TEST_DATASET as u32)
+            .finalize(),
+    );
+
+    let trn_img = mnist.trn_img;
+    let trn_lbl = mnist.trn_lbl;
+    let tst_img = mnist.tst_img;
+    let tst_lbl = mnist.tst_lbl;
+
+    println!("Loaded MNIST data");
+
+    // Can use an Array2 or Array3 here (Array3 for visualization)
+    let train_data = Array3::from_shape_vec(
+        (
+            TRAINING_DATASET,
+            MNIST_IMAGE_DIM,
+            MNIST_IMAGE_DIM,
+        ),
+        trn_img,
+    )
+    .expect("Error converting images to Array3 struct")
+    .map(|x| *x as f64 / 256.0);
+
+    // Convert the returned Mnist struct to Array2 format
+    let train_labels: Array2<f64> = Array2::from_shape_vec(
+        (TRAINING_DATASET, 1),
+        trn_lbl,
+    )
+    .expect(
+        "Error converting training labels to Array2 struct",
+    )
+    .map(|x| *x as f64);
+
+    let test_data: Array3<f64> = Array3::from_shape_vec(
+        (TEST_DATASET, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM),
+        tst_img,
+    )
+    .expect("Error converting images to Array3 struct")
+    .map(|x| *x as f64 / 256.);
+
+    let test_labels: Array2<f64> =
+        Array2::from_shape_vec((TEST_DATASET, 1), tst_lbl)
+            .expect(
+                "Error converting testing labels to \
+                 Array2 struct",
+            )
+            .map(|x| *x as f64);
+
+    let (x_train, y_train) = preprocess_narray_to_nalgebra(
+        train_data,
+        train_labels,
+    );
+    let (x_test, y_test) = preprocess_narray_to_nalgebra(
+        test_data,
+        test_labels,
+    );
+
+    let y_test = y_test
+        .into_iter()
+        .map(|v| {
+            for i in 0..DIGITS {
+                if v[i] != 0. {
+                    return i;
+                }
+            }
+            unreachable!()
+        })
+        .collect::<Vec<usize>>();
+
+    println!("Training began...");
+    model.train(&x_train, &y_train);
+    let score = model.validate(&x_test, &y_test);
+    //let score = y_train.len() as f64;
+
+    println!("CNN Score: {:.3}%\t", score * 100.);
+    drop(model);
+    dbg_thread.join().unwrap();
 }

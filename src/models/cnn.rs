@@ -1,5 +1,3 @@
-use std::mem::MaybeUninit;
-
 use nalgebra::SMatrix;
 use nalgebra::SVector;
 
@@ -12,43 +10,47 @@ use crate::layers::sequential::Sequential;
 use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
 
-const MNIST_IMAGE_DIM: usize = 28;
+pub const MNIST_IMAGE_DIM: usize = 28;
 const POST_CONV_DIM: usize = 20;
 const CONV_WEIGHT_DIM: usize =
-    MNIST_IMAGE_DIM - POST_CONV_DIM;
+    MNIST_IMAGE_DIM - POST_CONV_DIM + 1;
 
 const POST_POOL_DIM: usize = 15;
 const POOL_FILTER_DIM: usize =
-    POST_CONV_DIM - POST_POOL_DIM;
+    POST_CONV_DIM - POST_POOL_DIM + 1;
 
 const NUM_CONV: usize = 10;
 
 const SEQ_LAYER_INITIAL_DIM: usize =
     POST_POOL_DIM * POST_POOL_DIM * NUM_CONV;
 
-const DIGITS: usize = 10;
+pub const DIGITS: usize = 10;
 
 pub struct MyCnn {
-    conv: [Conv2d<
-        MNIST_IMAGE_DIM,
-        MNIST_IMAGE_DIM,
-        POST_CONV_DIM,
-        POST_CONV_DIM,
-        CONV_WEIGHT_DIM,
-        CONV_WEIGHT_DIM,
-    >; NUM_CONV],
-    maxpool: [MaxPool2d<
-        POST_CONV_DIM,
-        POST_CONV_DIM,
-        POST_POOL_DIM,
-        POST_POOL_DIM,
-        POOL_FILTER_DIM,
-        POOL_FILTER_DIM,
-    >; NUM_CONV],
-    s1: Sequential<SEQ_LAYER_INITIAL_DIM, 1000, Sigmoid>,
-    s2: Sequential<1000, 500, Sigmoid>,
-    s3: Sequential<500, 100, Sigmoid>,
-    s4: Sequential<100, DIGITS, Softmax>,
+    conv: Vec<
+        Conv2d<
+            MNIST_IMAGE_DIM,
+            MNIST_IMAGE_DIM,
+            POST_CONV_DIM,
+            POST_CONV_DIM,
+            CONV_WEIGHT_DIM,
+            CONV_WEIGHT_DIM,
+        >,
+    >,
+    maxpool: Vec<
+        MaxPool2d<
+            POST_CONV_DIM,
+            POST_CONV_DIM,
+            POST_POOL_DIM,
+            POST_POOL_DIM,
+            POOL_FILTER_DIM,
+            POOL_FILTER_DIM,
+        >,
+    >,
+    s1: Sequential<SEQ_LAYER_INITIAL_DIM, 100, Sigmoid>,
+    s2: Sequential<100, 50, Sigmoid>,
+    s3: Sequential<50, 20, Sigmoid>,
+    s4: Sequential<20, DIGITS, Softmax>,
 }
 
 impl NeuralNetwork<DIGITS> for MyCnn {
@@ -57,23 +59,13 @@ impl NeuralNetwork<DIGITS> for MyCnn {
 
     fn new(learn_rate: f64) -> Self {
         // initialize convolutional layers
-        let mut conv: [MaybeUninit<
-            Conv2d<
-                MNIST_IMAGE_DIM,
-                MNIST_IMAGE_DIM,
-                POST_CONV_DIM,
-                POST_CONV_DIM,
-                CONV_WEIGHT_DIM,
-                CONV_WEIGHT_DIM,
-            >,
-        >; NUM_CONV] = MaybeUninit::uninit_array();
-        for elem in &mut conv {
-            *elem =
-                MaybeUninit::new(Conv2d::new(learn_rate));
-        }
-        let conv = unsafe { std::mem::transmute(conv) };
+        let conv = (0..NUM_CONV)
+            .map(|_| Conv2d::new(learn_rate))
+            .collect();
 
-        let maxpool = [MaxPool2d::new(); NUM_CONV];
+        let maxpool = (0..NUM_CONV)
+            .map(|_| MaxPool2d::new())
+            .collect();
 
         let s1 = Sequential::new(learn_rate);
         let s2 = Sequential::new(learn_rate);
@@ -140,10 +132,10 @@ fn flatten(
 ) -> SVector<f64, SEQ_LAYER_INITIAL_DIM> {
     let mut out = SVector::zeros();
     for k in 0..NUM_CONV {
-        for i in 0..POST_CONV_DIM {
-            for j in 0..POST_CONV_DIM {
-                out[k * POST_CONV_DIM * POST_CONV_DIM
-                    + i * POST_CONV_DIM
+        for i in 0..POST_POOL_DIM {
+            for j in 0..POST_POOL_DIM {
+                out[k * POST_POOL_DIM * POST_POOL_DIM
+                    + i * POST_POOL_DIM
                     + j] = v[k][(i, j)];
             }
         }
@@ -157,11 +149,11 @@ fn unflatten(
 {
     let mut out = [SMatrix::zeros(); NUM_CONV];
     for k in 0..NUM_CONV {
-        for i in 0..POST_CONV_DIM {
-            for j in 0..POST_CONV_DIM {
+        for i in 0..POST_POOL_DIM {
+            for j in 0..POST_POOL_DIM {
                 out[k][(i, j)] =
-                    v[k * POST_CONV_DIM * POST_CONV_DIM
-                        + i * POST_CONV_DIM
+                    v[k * POST_POOL_DIM * POST_POOL_DIM
+                        + i * POST_POOL_DIM
                         + j];
             }
         }

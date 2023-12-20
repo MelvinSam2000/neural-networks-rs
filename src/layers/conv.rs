@@ -9,9 +9,9 @@ pub struct Conv2d<
     const RW: usize,
     const CW: usize,
 > {
-    x: SMatrix<f64, RX, CX>,
-    w: SMatrix<f64, RW, CW>,
-    y: SMatrix<f64, RY, CY>,
+    x: Box<SMatrix<f64, RX, CX>>,
+    w: Box<SMatrix<f64, RW, CW>>,
+    y: Box<SMatrix<f64, RY, CY>>,
     learn_rate: f64,
 }
 
@@ -38,14 +38,14 @@ impl<
              incorrect"
         );
 
-        let mut w = SMatrix::zeros();
-        let x = SMatrix::zeros();
-        let y = SMatrix::zeros();
+        let mut w = Box::new(SMatrix::zeros());
+        let x = Box::new(SMatrix::zeros());
+        let y = Box::new(SMatrix::zeros());
 
         // randomize W and b
         let mut rng = rand::thread_rng();
         let uniform = rand_distr::Uniform::new(-0.5, 0.5);
-        for i in 0..RX {
+        for i in 0..RW {
             for j in 0..CW {
                 w[(i, j)] = rng.sample(uniform);
             }
@@ -64,16 +64,16 @@ impl<
         &mut self,
         x: &SMatrix<f64, RX, CX>,
     ) -> SMatrix<f64, RY, CY> {
-        self.x = x.clone();
-        self.y = conv::<RX, CX, RW, CW, RY, CY>(
+        *self.x = x.clone();
+        *self.y = conv::<RX, CX, RW, CW, RY, CY>(
             &self.x, &self.w,
         );
-        self.y
+        *self.y
     }
 
     // backprop (TODO: find formula to propagate gradient backwards)
     pub fn bp(&mut self, g: SMatrix<f64, RY, CY>) {
-        self.w -= self.learn_rate
+        *self.w -= self.learn_rate
             * conv::<RX, CX, RY, CY, RW, CW>(&self.x, &g);
     }
 }
