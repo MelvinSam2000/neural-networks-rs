@@ -1,0 +1,16 @@
+General
+[ ] Optimizer SGD w momentum
+[ ] adagrad 
+[ ] RMSprop 
+[ ] adam
+
+CNN
+[ ] Code a wasm UI to test te model
+[ ] Export model parameters
+[ ] Try to change Vec of layers to stack array again
+[ ] Test nested conv layers
+
+RNN
+[ ] Build and test RNN (embedding finish)
+[ ] Build LSTM or GRU layer
+[ ] Build Transformer/Attention layer
