@@ -28,14 +28,12 @@ impl<
         assert_eq!(
             RY,
             RX - RW + 1,
-            "Row dimensions for conv operation are \
-             incorrect"
+            "Row dimensions are incorrect"
         );
         assert_eq!(
             CY,
             CX - CW + 1,
-            "Col dimensions for conv operation are \
-             incorrect"
+            "Col dimensions are incorrect"
         );
 
         let mut w = SMatrix::zeros();
@@ -94,18 +92,6 @@ fn conv<
     a: &SMatrix<f64, R1, C1>,
     b: &SMatrix<f64, R2, C2>,
 ) -> SMatrix<f64, R3, C3> {
-    assert_eq!(
-        R3,
-        R1 - R2 + 1,
-        "Row dimensions for conv operation are incorrect"
-    );
-    assert_eq!(
-        C1 - C2 + 1,
-        C3,
-        "Col dimensions for gradconv operation are \
-         incorrect"
-    );
-
     let mut c = SMatrix::zeros();
     for i1 in 0..R3 {
         for j1 in 0..C3 {
@@ -131,19 +117,6 @@ fn grad_conv<
     a: &SMatrix<f64, R1, C1>,
     b: &SMatrix<f64, R2, C2>,
 ) -> SMatrix<f64, R3, C3> {
-    /*
-    assert_eq!(
-        R3,
-        R1 + R2 - 1,
-        "Row dimensions for conv operation are incorrect"
-    );
-    assert_eq!(
-        C3,
-        C1 + C2 - 1,
-        "Col dimensions for conv operation are incorrect"
-    );
-    */
-
     let mut c = SMatrix::zeros();
     for i1 in 0..R1 {
         for j1 in 0..C1 {

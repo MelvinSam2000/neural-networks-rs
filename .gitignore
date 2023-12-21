@@ -2,3 +2,7 @@
 debug
 data
 embedding
+perf.data
+perf.data.old
+stacks.folded
+flamegraph.svg
