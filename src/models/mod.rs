@@ -70,6 +70,10 @@ where
                 self.debug_channel.as_ref()
             {
                 if n < M || i % k == 0 {
+                    print!(
+                        "Training completion: \r{:.0}%",
+                        (i as f64 / n as f64) * 100.
+                    );
                     let cost = T::loss(&y_out, &y);
                     channel.send(cost).unwrap();
                 }

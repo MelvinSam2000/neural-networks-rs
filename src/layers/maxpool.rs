@@ -9,7 +9,7 @@ pub struct MaxPool2d<
     const RW: usize,
     const CW: usize,
 > {
-    m: Box<[[(usize, usize); CY]; RY]>,
+    m: [[(usize, usize); CY]; RY],
 }
 
 impl<
@@ -34,7 +34,7 @@ impl<
             "Col dimensions for conv operation are \
              incorrect"
         );
-        let m = Box::new([[(0, 0); CY]; RY]);
+        let m = [[(0, 0); CY]; RY];
         Self { m }
     }
 

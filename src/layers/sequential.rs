@@ -8,7 +8,7 @@ use crate::activation::ActivationFunction;
 
 pub struct Sequential<const L1: usize, const L2: usize, F> {
     a: SVector<f64, L1>,
-    w: Box<SMatrix<f64, L2, L1>>,
+    w: SMatrix<f64, L2, L1>,
     b: SVector<f64, L2>,
     z: SVector<f64, L2>,
     learn_rate: f64,
@@ -22,7 +22,7 @@ where
 {
     pub fn new(learn_rate: f64) -> Self {
         let a = SVector::zeros();
-        let mut w = Box::new(SMatrix::zeros());
+        let mut w = SMatrix::zeros();
         let mut b = SVector::zeros();
         let z = SVector::zeros();
 
@@ -54,7 +54,7 @@ where
         a: SVector<f64, L1>,
     ) -> SVector<f64, L2> {
         self.a = a;
-        self.z = *self.w * self.a + self.b;
+        self.z = self.w * self.a + self.b;
         F::func(&self.z)
     }
 
@@ -66,7 +66,7 @@ where
         g = F::grad(&self.z) * g;
         let w_copy = self.w.clone();
         let dzdw = &g * self.a.transpose();
-        *self.w -= self.learn_rate * dzdw;
+        self.w -= self.learn_rate * dzdw;
         self.b -= self.learn_rate * &g;
         let dzda = w_copy.transpose();
         dzda * g

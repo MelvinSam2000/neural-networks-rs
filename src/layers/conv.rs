@@ -9,9 +9,9 @@ pub struct Conv2d<
     const RW: usize,
     const CW: usize,
 > {
-    x: Box<SMatrix<f64, RX, CX>>,
-    w: Box<SMatrix<f64, RW, CW>>,
-    y: Box<SMatrix<f64, RY, CY>>,
+    x: SMatrix<f64, RX, CX>,
+    w: SMatrix<f64, RW, CW>,
+    y: SMatrix<f64, RY, CY>,
     learn_rate: f64,
 }
 
@@ -38,9 +38,9 @@ impl<
              incorrect"
         );
 
-        let mut w = Box::new(SMatrix::zeros());
-        let x = Box::new(SMatrix::zeros());
-        let y = Box::new(SMatrix::zeros());
+        let mut w = SMatrix::zeros();
+        let x = SMatrix::zeros();
+        let y = SMatrix::zeros();
 
         // randomize W and b
         let mut rng = rand::thread_rng();
@@ -62,19 +62,24 @@ impl<
     // feedforward
     pub fn ff(
         &mut self,
-        x: &SMatrix<f64, RX, CX>,
+        x: SMatrix<f64, RX, CX>,
     ) -> SMatrix<f64, RY, CY> {
-        *self.x = x.clone();
-        *self.y = conv::<RX, CX, RW, CW, RY, CY>(
+        self.x = x;
+        self.y = conv::<RX, CX, RW, CW, RY, CY>(
             &self.x, &self.w,
         );
-        *self.y
+        self.y
     }
 
-    // backprop (TODO: find formula to propagate gradient backwards)
-    pub fn bp(&mut self, g: SMatrix<f64, RY, CY>) {
-        *self.w -= self.learn_rate
+    // backprop
+    pub fn bp(
+        &mut self,
+        g: SMatrix<f64, RY, CY>,
+    ) -> SMatrix<f64, RX, CX> {
+        let w_clone = self.w.clone();
+        self.w -= self.learn_rate
             * conv::<RX, CX, RY, CY, RW, CW>(&self.x, &g);
+        grad_conv::<RW, CW, RY, CY, RX, CX>(&w_clone, &g)
     }
 }
 
@@ -95,9 +100,10 @@ fn conv<
         "Row dimensions for conv operation are incorrect"
     );
     assert_eq!(
-        C3,
         C1 - C2 + 1,
-        "Col dimensions for conv operation are incorrect"
+        C3,
+        "Col dimensions for gradconv operation are \
+         incorrect"
     );
 
     let mut c = SMatrix::zeros();
@@ -107,6 +113,44 @@ fn conv<
                 for j2 in 0..C2 {
                     c[(i1, j1)] +=
                         a[(i1 + i2, j1 + j2)] * b[(i2, j2)];
+                }
+            }
+        }
+    }
+    c
+}
+
+fn grad_conv<
+    const R1: usize,
+    const C1: usize,
+    const R2: usize,
+    const C2: usize,
+    const R3: usize,
+    const C3: usize,
+>(
+    a: &SMatrix<f64, R1, C1>,
+    b: &SMatrix<f64, R2, C2>,
+) -> SMatrix<f64, R3, C3> {
+    /*
+    assert_eq!(
+        R3,
+        R1 + R2 - 1,
+        "Row dimensions for conv operation are incorrect"
+    );
+    assert_eq!(
+        C3,
+        C1 + C2 - 1,
+        "Col dimensions for conv operation are incorrect"
+    );
+    */
+
+    let mut c = SMatrix::zeros();
+    for i1 in 0..R1 {
+        for j1 in 0..C1 {
+            for i2 in 0..R2 {
+                for j2 in 0..C2 {
+                    c[(i1 + i2, j1 + j2)] +=
+                        a[(i1, j1)] * b[(i2, j2)];
                 }
             }
         }
