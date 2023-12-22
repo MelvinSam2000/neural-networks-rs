@@ -5,22 +5,31 @@ use nalgebra::SVector;
 use rand::Rng;
 
 use crate::activation::ActivationFunction;
+use crate::optimizers::Optimizer;
+use crate::optimizers::OptimizerFactory;
 
-pub struct Sequential<const L1: usize, const L2: usize, F> {
+pub struct Sequential<
+    const L1: usize,
+    const L2: usize,
+    F,
+    O: OptimizerFactory<L2, L1> + OptimizerFactory<L2, 1>,
+> {
     a: SVector<f64, L1>,
     w: SMatrix<f64, L2, L1>,
     b: SVector<f64, L2>,
     z: SVector<f64, L2>,
-    learn_rate: f64,
     act: PhantomData<F>,
+    optw: <O as OptimizerFactory<L2, L1>>::Optimizer,
+    optb: <O as OptimizerFactory<L2, 1>>::Optimizer,
 }
 
-impl<const L1: usize, const L2: usize, F>
-    Sequential<L1, L2, F>
+impl<const L1: usize, const L2: usize, F, O>
+    Sequential<L1, L2, F, O>
 where
     F: ActivationFunction<L2>,
+    O: OptimizerFactory<L2, L1> + OptimizerFactory<L2, 1>,
 {
-    pub fn new(learn_rate: f64) -> Self {
+    pub fn new() -> Self {
         let a = SVector::zeros();
         let mut w = SMatrix::zeros();
         let mut b = SVector::zeros();
@@ -37,14 +46,19 @@ where
         }
 
         let act = PhantomData;
+        let optw = <O as OptimizerFactory<L2, L1>>::Optimizer::init();
+        let optb =
+            <O as OptimizerFactory<L2, 1>>::Optimizer::init(
+            );
 
         Self {
             a,
             w,
             b,
             z,
-            learn_rate,
             act,
+            optw,
+            optb,
         }
     }
 
@@ -66,8 +80,8 @@ where
         g = F::grad(&self.z) * g;
         let w_copy = self.w.clone();
         let dzdw = &g * self.a.transpose();
-        self.w -= self.learn_rate * dzdw;
-        self.b -= self.learn_rate * &g;
+        self.optw.update_param(&mut self.w, &dzdw);
+        self.optb.update_param(&mut self.b, &g);
         let dzda = w_copy.transpose();
         dzda * g
     }

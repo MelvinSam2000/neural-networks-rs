@@ -13,6 +13,8 @@ use crate::models::cnn::MyCnn;
 use crate::models::cnn::DIGITS;
 use crate::models::cnn::MNIST_IMAGE_DIM;
 use crate::models::NNClassifierModel;
+//use crate::optimizers::rmsprop::RmsPropFactory;
+use crate::optimizers::sgdmomentum::SgdWMomentumFactory;
 use crate::runners::write_costs_to_file;
 
 fn preprocess_narray_to_nalgebra(
@@ -113,7 +115,7 @@ fn get_datasets() -> (
 
 pub fn train_and_validate_mnist_cnn() {
     let pool = ThreadPoolBuilder::new()
-        .stack_size(32 * 1024 * 1024)
+        .stack_size(64 * 1024 * 1024)
         .build()
         .unwrap();
 
@@ -138,11 +140,16 @@ pub fn train_and_validate_mnist_cnn() {
             .into_par_iter()
             .map(|i| {
                 let (tx, rx) = mpsc::channel();
-                let mut model =
-                    NNClassifierModel::<MyCnn, 10>::new(
-                        0.01,
-                        Some(tx),
-                    );
+                let mut model = NNClassifierModel::<
+                    MyCnn<
+                        SgdWMomentumFactory<1, 100, 5, 10>,
+                        //SgdFactory<1, 10>,
+                        //RmsPropFactory<1, 100, 5, 10>,
+                    >,
+                    10,
+                >::new(
+                    Some(tx)
+                );
                 let dbg_thread =
                     std::thread::spawn(move || {
                         write_costs_to_file(

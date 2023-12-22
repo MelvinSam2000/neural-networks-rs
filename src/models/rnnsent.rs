@@ -10,6 +10,7 @@ use crate::layers::rnncell::RnnCell;
 use crate::layers::sequential::Sequential;
 use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
+use crate::optimizers::OptimizerFactory;
 
 const H: usize = 1;
 
@@ -18,23 +19,32 @@ pub struct RnnSentimentAnalyzer<
     const N: usize,
     const X: usize,
     const Y: usize,
+    O: OptimizerFactory<10, N>
+        + OptimizerFactory<10, 1>
+        + OptimizerFactory<Y, 10>
+        + OptimizerFactory<Y, 1>,
 > {
     embedding: Embedding<N>,
     rnn: RnnCell<X, 1, H, N, Tanh>,
-    s1: Sequential<N, 10, Sigmoid>,
-    s2: Sequential<10, Y, Softmax>,
+    s1: Sequential<N, 10, Sigmoid, O>,
+    s2: Sequential<10, Y, Softmax, O>,
 }
 
-impl<const N: usize, const X: usize, const Y: usize>
-    NeuralNetwork<Y> for RnnSentimentAnalyzer<N, X, Y>
+impl<const N: usize, const X: usize, const Y: usize, O>
+    NeuralNetwork<Y> for RnnSentimentAnalyzer<N, X, Y, O>
+where
+    O: OptimizerFactory<10, N>
+        + OptimizerFactory<10, 1>
+        + OptimizerFactory<Y, 10>
+        + OptimizerFactory<Y, 1>,
 {
     type ModelInput = String;
 
-    fn new(learn_rate: f64) -> Self {
+    fn new() -> Self {
         let embedding = Embedding::new("TODO");
-        let rnn = RnnCell::new(learn_rate);
-        let s1 = Sequential::new(learn_rate);
-        let s2 = Sequential::new(learn_rate);
+        let rnn = RnnCell::new(0.1);
+        let s1 = Sequential::new();
+        let s2 = Sequential::new();
         Self {
             embedding,
             rnn,

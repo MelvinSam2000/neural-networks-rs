@@ -8,10 +8,12 @@ use crate::activation::softmax::Softmax;
 use crate::activation::ActivationFunction;
 use crate::dataset::get_data_csv;
 use crate::loss::crossent::CrossEntropy;
-use crate::loss::mse::Mse;
 use crate::loss::LossFunction;
 use crate::models::ann4::Ann4;
 use crate::models::NNClassifierModel;
+use crate::optimizers::sgd::SgdFactory;
+use crate::optimizers::sgdmomentum::SgdWMomentumFactory;
+use crate::optimizers::OptimizerFactory;
 
 fn train_and_validate<
     const L1: usize,
@@ -22,8 +24,13 @@ fn train_and_validate<
     F2: ActivationFunction<L3>,
     F3: ActivationFunction<L4>,
     LOSS: LossFunction<L4>,
+    OPT: OptimizerFactory<L2, L1>
+        + OptimizerFactory<L2, 1>
+        + OptimizerFactory<L3, L2>
+        + OptimizerFactory<L3, 1>
+        + OptimizerFactory<L4, L3>
+        + OptimizerFactory<L4, 1>,
 >(
-    learn_rate: f64,
     csv_file: &str,
     debug_channel: Option<Sender<f64>>,
 ) {
@@ -40,6 +47,7 @@ fn train_and_validate<
         F2,
         F3,
         LOSS,
+        OPT,
     >::preprocess(
         &x_train, &y_train
     );
@@ -52,18 +60,19 @@ fn train_and_validate<
         F2,
         F3,
         LOSS,
+        OPT,
     >::preprocess(&x_test, &y_test);
     let mut model = NNClassifierModel::<
-        Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS>,
+        Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS, OPT>,
         L4,
-    >::new(learn_rate, debug_channel);
+    >::new(debug_channel);
     model.train(&x_train, &y_train);
     let score = model.validate(&x_test, &y_test);
 
     println!(
         "File: {}\t LR:{}\t Score: {:.3}%\t",
         csv_file,
-        learn_rate,
+        "opt",
         score * 100.
     );
 }
@@ -81,7 +90,8 @@ pub fn train_and_validate_csv_ann() {
                 Sigmoid,
                 Softmax,
                 CrossEntropy,
-            >(0.8, "data/knn.csv", Some(tx));
+                SgdFactory<8, 10>,
+            >("data/knn.csv", Some(tx));
             write_costs_to_file("knn.csv", rx);
         },
         || {
@@ -95,7 +105,9 @@ pub fn train_and_validate_csv_ann() {
                 Relu,
                 Softmax,
                 CrossEntropy,
-            >(0.001, "data/gda.csv", Some(tx));
+                SgdWMomentumFactory<1, 10, 8, 10>,
+                //SgdFactory<1, 1000>,
+            >("data/gda.csv", Some(tx));
             write_costs_to_file("gda.csv", rx);
         },
         || {
@@ -105,11 +117,13 @@ pub fn train_and_validate_csv_ann() {
                 10,
                 6,
                 2,
-                Relu,
-                Relu,
                 Sigmoid,
-                Mse,
-            >(0.001, "data/nb.csv", Some(tx));
+                Sigmoid,
+                Sigmoid,
+                CrossEntropy,
+                SgdWMomentumFactory<1, 10, 5, 10>,
+                //SgdFactory<1, 1000>,
+            >("data/nb.csv", Some(tx));
             write_costs_to_file("nb.csv", rx);
         },
         || {
@@ -123,9 +137,8 @@ pub fn train_and_validate_csv_ann() {
                 Sigmoid,
                 Softmax,
                 CrossEntropy,
-            >(
-                0.5, "data/neg_square.csv", Some(tx)
-            );
+                SgdFactory<1, 2>,
+            >("data/neg_square.csv", Some(tx));
             write_costs_to_file("neg_square.csv", rx);
         },
         || {
@@ -139,7 +152,8 @@ pub fn train_and_validate_csv_ann() {
                 Sigmoid,
                 Softmax,
                 CrossEntropy,
-            >(0.5, "data/circle.csv", Some(tx));
+                SgdFactory<1, 2>,
+            >("data/circle.csv", Some(tx));
             write_costs_to_file("circle.csv", rx);
         },
     ];

@@ -8,7 +8,7 @@ pub mod rnnsent;
 
 pub trait NeuralNetwork<const Y: usize> {
     type ModelInput;
-    fn new(learn_rate: f64) -> Self;
+    fn new() -> Self;
     fn feedforward(
         &mut self,
         x: Self::ModelInput,
@@ -35,11 +35,8 @@ where
     T::ModelInput: Clone,
     T::ModelInput: Copy,
 {
-    pub fn new(
-        learn_rate: f64,
-        debug_channel: Option<Sender<f64>>,
-    ) -> Self {
-        let model = T::new(learn_rate);
+    pub fn new(debug_channel: Option<Sender<f64>>) -> Self {
+        let model = T::new();
         Self {
             model,
             debug_channel,

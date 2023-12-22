@@ -6,6 +6,7 @@ use super::NeuralNetwork;
 use crate::activation::ActivationFunction;
 use crate::layers::sequential::Sequential;
 use crate::loss::LossFunction;
+use crate::optimizers::OptimizerFactory;
 
 pub struct Ann4<
     const L1: usize,
@@ -16,10 +17,16 @@ pub struct Ann4<
     F2,
     F3,
     LOSS,
+    OPT: OptimizerFactory<L2, L1>
+        + OptimizerFactory<L2, 1>
+        + OptimizerFactory<L3, L2>
+        + OptimizerFactory<L3, 1>
+        + OptimizerFactory<L4, L3>
+        + OptimizerFactory<L4, 1>,
 > {
-    s1: Sequential<L1, L2, F1>,
-    s2: Sequential<L2, L3, F2>,
-    s3: Sequential<L3, L4, F3>,
+    s1: Sequential<L1, L2, F1, OPT>,
+    s2: Sequential<L2, L3, F2, OPT>,
+    s3: Sequential<L3, L4, F3, OPT>,
     loss: PhantomData<LOSS>,
 }
 
@@ -32,20 +39,27 @@ impl<
         F2,
         F3,
         LOSS,
+        OPT,
     > NeuralNetwork<L4>
-    for Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS>
+    for Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS, OPT>
 where
     F1: ActivationFunction<L2>,
     F2: ActivationFunction<L3>,
     F3: ActivationFunction<L4>,
     LOSS: LossFunction<L4>,
+    OPT: OptimizerFactory<L2, L1>
+        + OptimizerFactory<L2, 1>
+        + OptimizerFactory<L3, L2>
+        + OptimizerFactory<L3, 1>
+        + OptimizerFactory<L4, L3>
+        + OptimizerFactory<L4, 1>,
 {
     type ModelInput = SVector<f64, L1>;
 
-    fn new(learn_rate: f64) -> Self {
-        let s1 = Sequential::new(learn_rate);
-        let s2 = Sequential::new(learn_rate);
-        let s3 = Sequential::new(learn_rate);
+    fn new() -> Self {
+        let s1 = Sequential::new();
+        let s2 = Sequential::new();
+        let s3 = Sequential::new();
         let loss = PhantomData;
         Self { s1, s2, s3, loss }
     }
@@ -89,12 +103,19 @@ impl<
         F2,
         F3,
         LOSS,
-    > Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS>
+        OPT,
+    > Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS, OPT>
 where
     F1: ActivationFunction<L2>,
     F2: ActivationFunction<L3>,
     F3: ActivationFunction<L4>,
     LOSS: LossFunction<L4>,
+    OPT: OptimizerFactory<L2, L1>
+        + OptimizerFactory<L2, 1>
+        + OptimizerFactory<L3, L2>
+        + OptimizerFactory<L3, 1>
+        + OptimizerFactory<L4, L3>
+        + OptimizerFactory<L4, 1>,
 {
     pub fn preprocess(
         x: &[[f64; L1]],

@@ -8,6 +8,7 @@ pub mod dataset;
 pub mod layers;
 pub mod loss;
 pub mod models;
+pub mod optimizers;
 pub mod runners;
 
 fn main() {

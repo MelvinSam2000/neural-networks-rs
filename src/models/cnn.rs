@@ -11,6 +11,7 @@ use crate::layers::maxpool::MaxPool2d;
 use crate::layers::sequential::Sequential;
 use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
+use crate::optimizers::OptimizerFactory;
 
 pub const MNIST_IMAGE_DIM: usize = 28;
 const POST_CONV_DIM: usize = 20;
@@ -23,14 +24,24 @@ const POST_POOL_DIM: usize = 15;
 const POOL_FILTER_DIM: usize =
     POST_CONV_DIM - POST_POOL_DIM + 1;
 
-const NUM_CONV: usize = 10;
+const NUM_CONV: usize = 4;
 
 const SEQ_LAYER_INITIAL_DIM: usize =
     POST_POOL_DIM * POST_POOL_DIM * NUM_CONV;
 
 pub const DIGITS: usize = 10;
 
-pub struct MyCnn {
+pub struct MyCnn<
+    OPT: OptimizerFactory<100, SEQ_LAYER_INITIAL_DIM>
+        + OptimizerFactory<100, 1>
+        + OptimizerFactory<50, 100>
+        + OptimizerFactory<50, 1>
+        + OptimizerFactory<20, 50>
+        + OptimizerFactory<20, 1>
+        + OptimizerFactory<DIGITS, 20>
+        + OptimizerFactory<DIGITS, 1>
+        + OptimizerFactory<CONV_WEIGHT_DIM, CONV_WEIGHT_DIM>,
+> {
     conv: Vec<
         Conv2d<
             MNIST_IMAGE_DIM,
@@ -39,6 +50,7 @@ pub struct MyCnn {
             POST_CONV_DIM,
             CONV_WEIGHT_DIM,
             CONV_WEIGHT_DIM,
+            OPT,
         >,
     >,
     relu: ActivationLayer<POST_CONV_DIM_SQUARED, Relu>,
@@ -52,21 +64,36 @@ pub struct MyCnn {
             POOL_FILTER_DIM,
         >,
     >,
-    s1: Sequential<SEQ_LAYER_INITIAL_DIM, 100, Sigmoid>,
-    s2: Sequential<100, 50, Sigmoid>,
-    s3: Sequential<50, 20, Sigmoid>,
-    s4: Sequential<20, DIGITS, Softmax>,
+    s1: Sequential<
+        SEQ_LAYER_INITIAL_DIM,
+        100,
+        Sigmoid,
+        OPT,
+    >,
+    s2: Sequential<100, 50, Sigmoid, OPT>,
+    s3: Sequential<50, 20, Sigmoid, OPT>,
+    s4: Sequential<20, DIGITS, Softmax, OPT>,
 }
 
-impl NeuralNetwork<DIGITS> for MyCnn {
+impl<OPT> NeuralNetwork<DIGITS> for MyCnn<OPT>
+where
+    OPT: OptimizerFactory<100, SEQ_LAYER_INITIAL_DIM>
+        + OptimizerFactory<100, 1>
+        + OptimizerFactory<50, 100>
+        + OptimizerFactory<50, 1>
+        + OptimizerFactory<20, 50>
+        + OptimizerFactory<20, 1>
+        + OptimizerFactory<DIGITS, 20>
+        + OptimizerFactory<DIGITS, 1>
+        + OptimizerFactory<CONV_WEIGHT_DIM, CONV_WEIGHT_DIM>,
+{
     type ModelInput =
         SMatrix<f64, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>;
 
-    fn new(learn_rate: f64) -> Self {
+    fn new() -> Self {
         // initialize convolutional layers
-        let conv = (0..NUM_CONV)
-            .map(|_| Conv2d::new(learn_rate))
-            .collect();
+        let conv =
+            (0..NUM_CONV).map(|_| Conv2d::new()).collect();
 
         let relu = ActivationLayer::new();
 
@@ -74,10 +101,10 @@ impl NeuralNetwork<DIGITS> for MyCnn {
             .map(|_| MaxPool2d::new())
             .collect();
 
-        let s1 = Sequential::new(learn_rate);
-        let s2 = Sequential::new(learn_rate);
-        let s3 = Sequential::new(learn_rate);
-        let s4 = Sequential::new(learn_rate);
+        let s1 = Sequential::new();
+        let s2 = Sequential::new();
+        let s3 = Sequential::new();
+        let s4 = Sequential::new();
 
         Self {
             conv,

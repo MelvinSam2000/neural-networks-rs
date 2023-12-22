@@ -1,6 +1,9 @@
 use nalgebra::SMatrix;
 use rand::Rng;
 
+use crate::optimizers::Optimizer;
+use crate::optimizers::OptimizerFactory;
+
 pub struct Conv2d<
     const RX: usize,
     const CX: usize,
@@ -8,11 +11,12 @@ pub struct Conv2d<
     const CY: usize,
     const RW: usize,
     const CW: usize,
+    O: OptimizerFactory<RW, CW>,
 > {
     x: SMatrix<f64, RX, CX>,
     w: SMatrix<f64, RW, CW>,
     y: SMatrix<f64, RY, CY>,
-    learn_rate: f64,
+    opt: <O as OptimizerFactory<RW, CW>>::Optimizer,
 }
 
 impl<
@@ -22,9 +26,12 @@ impl<
         const CY: usize,
         const RW: usize,
         const CW: usize,
-    > Conv2d<RX, CX, RY, CY, RW, CW>
+        O,
+    > Conv2d<RX, CX, RY, CY, RW, CW, O>
+where
+    O: OptimizerFactory<RW, CW>,
 {
-    pub fn new(learn_rate: f64) -> Self {
+    pub fn new() -> Self {
         assert_eq!(
             RY,
             RX - RW + 1,
@@ -49,12 +56,9 @@ impl<
             }
         }
 
-        Self {
-            x,
-            w,
-            y,
-            learn_rate,
-        }
+        let opt = <O as OptimizerFactory<RW, CW>>::Optimizer::init();
+
+        Self { x, w, y, opt }
     }
 
     // feedforward
@@ -75,8 +79,9 @@ impl<
         g: SMatrix<f64, RY, CY>,
     ) -> SMatrix<f64, RX, CX> {
         let w_clone = self.w.clone();
-        self.w -= self.learn_rate
-            * conv::<RX, CX, RY, CY, RW, CW>(&self.x, &g);
+        let grad =
+            conv::<RX, CX, RY, CY, RW, CW>(&self.x, &g);
+        self.opt.update_param(&mut self.w, &grad);
         grad_conv::<RW, CW, RY, CY, RX, CX>(&w_clone, &g)
     }
 }
