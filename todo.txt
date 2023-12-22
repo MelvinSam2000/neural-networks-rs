@@ -2,8 +2,8 @@ Optimizers:
 [x] Establish framework for optmizers
 [x] SGD
 [x] SGD w momentum
-[ ] adagrad 
-[ ] RMSprop 
+[x] adagrad 
+[x] RMSprop 
 [ ] adam
 
 CNN
