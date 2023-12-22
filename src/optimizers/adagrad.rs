@@ -4,11 +4,9 @@ use rand_distr::num_traits::Inv;
 use super::Optimizer;
 use super::OptimizerFactory;
 
-pub struct RmsProp<
+pub struct Adagrad<
     const ALPHA_NUM: usize,
     const ALPHA_DEN: usize,
-    const RHO_NUM: usize,
-    const RHO_DEN: usize,
     const R: usize,
     const C: usize,
 > {
@@ -18,19 +16,10 @@ pub struct RmsProp<
 impl<
         const ALPHA_NUM: usize,
         const ALPHA_DEN: usize,
-        const RHO_NUM: usize,
-        const RHO_DEN: usize,
         const R: usize,
         const C: usize,
     > Optimizer<R, C>
-    for RmsProp<
-        ALPHA_NUM,
-        ALPHA_DEN,
-        RHO_NUM,
-        RHO_DEN,
-        R,
-        C,
-    >
+    for Adagrad<ALPHA_NUM, ALPHA_DEN, R, C>
 {
     fn init() -> Self {
         let g = SMatrix::zeros();
@@ -43,9 +32,7 @@ impl<
         gradient: &SMatrix<f64, R, C>,
     ) {
         let alpha = ALPHA_NUM as f64 / ALPHA_DEN as f64;
-        let rho = RHO_NUM as f64 / RHO_DEN as f64;
-        self.g = rho * &self.g
-            + (1. - rho) * gradient.component_mul(gradient);
+        self.g += gradient.component_mul(gradient);
         *weight -= alpha
             * elementwise_invsqrt(&self.g)
                 .component_mul(&gradient);
@@ -63,11 +50,9 @@ fn elementwise_invsqrt<const R: usize, const C: usize>(
     out
 }
 
-pub struct RmsPropFactory<
+pub struct AdagradFactory<
     const ALPHA_NUM: usize,
     const ALPHA_DEN: usize,
-    const RHO_NUM: usize,
-    const RHO_DEN: usize,
 >;
 
 impl<
@@ -75,38 +60,8 @@ impl<
         const C: usize,
         const ALPHA_NUM: usize,
         const ALPHA_DEN: usize,
-        const RHO_NUM: usize,
-        const RHO_DEN: usize,
     > OptimizerFactory<R, C>
-    for RmsPropFactory<
-        ALPHA_NUM,
-        ALPHA_DEN,
-        RHO_NUM,
-        RHO_DEN,
-    >
+    for AdagradFactory<ALPHA_NUM, ALPHA_DEN>
 {
-    type Optimizer = RmsProp<
-        ALPHA_NUM,
-        ALPHA_DEN,
-        RHO_NUM,
-        RHO_DEN,
-        R,
-        C,
-    >;
+    type Optimizer = Adagrad<ALPHA_NUM, ALPHA_DEN, R, C>;
 }
-
-/*
-impl Optimizer for OptRmsProp {
-    fn update_param<const R: usize, const C: usize>(
-        &mut self,
-        weight: &mut SMatrix<f64, R, C>,
-        gradient: &SMatrix<f64, R, C>,
-    ) {
-        self.g = self.rho * &self.g;
-        //+ (1. - self.rho)
-        //    * gradient
-        //    * gradient.transpose();
-        *weight -= self.alpha * &self.g * gradient;
-    }
-}
-*/

@@ -11,7 +11,7 @@ use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
 use crate::models::ann4::Ann4;
 use crate::models::NNClassifierModel;
-use crate::optimizers::sgd::SgdFactory;
+use crate::optimizers::rmsprop::RmsPropFactory;
 use crate::optimizers::sgdmomentum::SgdWMomentumFactory;
 use crate::optimizers::OptimizerFactory;
 
@@ -90,7 +90,8 @@ pub fn train_and_validate_csv_ann() {
                 Sigmoid,
                 Softmax,
                 CrossEntropy,
-                SgdFactory<8, 10>,
+                //SgdFactory<8, 10>,
+                RmsPropFactory<8, 10, 9, 10>,
             >("data/knn.csv", Some(tx));
             write_costs_to_file("knn.csv", rx);
         },
@@ -105,8 +106,8 @@ pub fn train_and_validate_csv_ann() {
                 Relu,
                 Softmax,
                 CrossEntropy,
-                SgdWMomentumFactory<1, 10, 8, 10>,
-                //SgdFactory<1, 1000>,
+                //SgdWMomentumFactory<1, 10, 8, 10>,
+                RmsPropFactory<1, 10, 9, 10>,
             >("data/gda.csv", Some(tx));
             write_costs_to_file("gda.csv", rx);
         },
@@ -121,8 +122,9 @@ pub fn train_and_validate_csv_ann() {
                 Sigmoid,
                 Sigmoid,
                 CrossEntropy,
-                SgdWMomentumFactory<1, 10, 5, 10>,
+                //SgdWMomentumFactory<1, 10, 5, 10>,
                 //SgdFactory<1, 1000>,
+                RmsPropFactory<1, 1000, 9, 10>,
             >("data/nb.csv", Some(tx));
             write_costs_to_file("nb.csv", rx);
         },
@@ -137,7 +139,8 @@ pub fn train_and_validate_csv_ann() {
                 Sigmoid,
                 Softmax,
                 CrossEntropy,
-                SgdFactory<1, 2>,
+                //SgdFactory<1, 2>,
+                RmsPropFactory<1, 2, 9, 10>,
             >("data/neg_square.csv", Some(tx));
             write_costs_to_file("neg_square.csv", rx);
         },
@@ -152,7 +155,8 @@ pub fn train_and_validate_csv_ann() {
                 Sigmoid,
                 Softmax,
                 CrossEntropy,
-                SgdFactory<1, 2>,
+                //SgdFactory<1, 2>,
+                SgdWMomentumFactory<1, 2, 8, 10>,
             >("data/circle.csv", Some(tx));
             write_costs_to_file("circle.csv", rx);
         },
