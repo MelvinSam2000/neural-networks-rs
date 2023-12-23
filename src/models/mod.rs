@@ -56,7 +56,7 @@ where
         }
         // begin training
         let n = x_train.len();
-        const M: usize = 200;
+        const M: usize = 400;
         let k = n / M;
         for i in 0..n {
             let x = x_train[i];

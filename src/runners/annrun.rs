@@ -11,8 +11,10 @@ use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
 use crate::models::ann4::Ann4;
 use crate::models::NNClassifierModel;
+use crate::optimizers::adam::AdamFactory;
 use crate::optimizers::rmsprop::RmsPropFactory;
 use crate::optimizers::sgdmomentum::SgdWMomentumFactory;
+use crate::optimizers::Optimizer;
 use crate::optimizers::OptimizerFactory;
 
 fn train_and_validate<
@@ -72,7 +74,7 @@ fn train_and_validate<
     println!(
         "File: {}\t LR:{}\t Score: {:.3}%\t",
         csv_file,
-        "opt",
+        <OPT as OptimizerFactory<L2, 1>>::Optimizer::name(),
         score * 100.
     );
 }
@@ -91,7 +93,8 @@ pub fn train_and_validate_csv_ann() {
                 Softmax,
                 CrossEntropy,
                 //SgdFactory<8, 10>,
-                RmsPropFactory<8, 10, 9, 10>,
+                //RmsPropFactory<8, 10, 9, 10>,
+                AdamFactory<8, 10, 8, 10, 8, 10>,
             >("data/knn.csv", Some(tx));
             write_costs_to_file("knn.csv", rx);
         },
@@ -107,7 +110,8 @@ pub fn train_and_validate_csv_ann() {
                 Softmax,
                 CrossEntropy,
                 //SgdWMomentumFactory<1, 10, 8, 10>,
-                RmsPropFactory<1, 10, 9, 10>,
+                //RmsPropFactory<1, 10, 9, 10>,
+                AdamFactory<1, 10, 8, 10, 8, 10>,
             >("data/gda.csv", Some(tx));
             write_costs_to_file("gda.csv", rx);
         },
@@ -125,6 +129,7 @@ pub fn train_and_validate_csv_ann() {
                 //SgdWMomentumFactory<1, 10, 5, 10>,
                 //SgdFactory<1, 1000>,
                 RmsPropFactory<1, 1000, 9, 10>,
+                //AdamFactory<1, 1000, 8, 10, 8, 10>,
             >("data/nb.csv", Some(tx));
             write_costs_to_file("nb.csv", rx);
         },
@@ -140,7 +145,8 @@ pub fn train_and_validate_csv_ann() {
                 Softmax,
                 CrossEntropy,
                 //SgdFactory<1, 2>,
-                RmsPropFactory<1, 2, 9, 10>,
+                //RmsPropFactory<1, 2, 9, 10>,
+                AdamFactory<1, 2, 8, 10, 8, 10>,
             >("data/neg_square.csv", Some(tx));
             write_costs_to_file("neg_square.csv", rx);
         },
@@ -157,6 +163,7 @@ pub fn train_and_validate_csv_ann() {
                 CrossEntropy,
                 //SgdFactory<1, 2>,
                 SgdWMomentumFactory<1, 2, 8, 10>,
+                //AdamFactory<1, 2, 8, 10, 8, 10>,
             >("data/circle.csv", Some(tx));
             write_costs_to_file("circle.csv", rx);
         },

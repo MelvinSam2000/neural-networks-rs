@@ -1,6 +1,7 @@
 use nalgebra::SMatrix;
 
 pub mod adagrad;
+pub mod adam;
 pub mod rmsprop;
 pub mod sgd;
 pub mod sgdmomentum;
@@ -12,8 +13,21 @@ pub trait Optimizer<const R: usize, const C: usize> {
         weight: &mut SMatrix<f64, R, C>,
         gradient: &SMatrix<f64, R, C>,
     );
+    fn name() -> String;
 }
 
 pub trait OptimizerFactory<const R: usize, const C: usize> {
     type Optimizer: Optimizer<R, C>;
+}
+
+pub fn component_invsqrt<const R: usize, const C: usize>(
+    m: &SMatrix<f64, R, C>,
+) -> SMatrix<f64, R, C> {
+    const EPSILON: f64 = 0.000001;
+
+    let mut out = m.clone();
+    out.iter_mut().for_each(|x| {
+        *x = 1. / (*x + EPSILON).sqrt();
+    });
+    out
 }

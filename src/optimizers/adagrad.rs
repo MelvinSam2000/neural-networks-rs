@@ -1,6 +1,6 @@
 use nalgebra::SMatrix;
-use rand_distr::num_traits::Inv;
 
+use super::component_invsqrt;
 use super::Optimizer;
 use super::OptimizerFactory;
 
@@ -34,20 +34,13 @@ impl<
         let alpha = ALPHA_NUM as f64 / ALPHA_DEN as f64;
         self.g += gradient.component_mul(gradient);
         *weight -= alpha
-            * elementwise_invsqrt(&self.g)
+            * component_invsqrt(&self.g)
                 .component_mul(&gradient);
     }
-}
 
-fn elementwise_invsqrt<const R: usize, const C: usize>(
-    m: &SMatrix<f64, R, C>,
-) -> SMatrix<f64, R, C> {
-    const EPSILON: f64 = 0.0000001;
-
-    let mut out = m.clone();
-    out.iter_mut()
-        .for_each(|x| *x = (*x + EPSILON).sqrt().inv());
-    out
+    fn name() -> String {
+        "adagrad".to_string()
+    }
 }
 
 pub struct AdagradFactory<

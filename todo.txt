@@ -5,6 +5,7 @@ Optimizers:
 [x] adagrad 
 [x] RMSprop 
 [ ] adam
+[ ] name property
 
 CNN
 [x] Relu specific for matrix for better performance

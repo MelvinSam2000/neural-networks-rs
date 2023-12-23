@@ -27,6 +27,10 @@ impl<
         let alpha = ALPHA_NUM as f64 / ALPHA_DEN as f64;
         *weight -= alpha * gradient;
     }
+
+    fn name() -> String {
+        "SGD".to_string()
+    }
 }
 
 pub struct SgdFactory<

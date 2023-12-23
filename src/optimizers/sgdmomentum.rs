@@ -46,6 +46,10 @@ impl<
         self.v = beta * &self.v + (1. - beta) * gradient;
         *weight -= alpha * &self.v;
     }
+
+    fn name() -> String {
+        "SGD with momentum".to_string()
+    }
 }
 
 pub struct SgdWMomentumFactory<

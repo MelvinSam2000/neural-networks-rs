@@ -13,7 +13,7 @@ use crate::models::cnn::MyCnn;
 use crate::models::cnn::DIGITS;
 use crate::models::cnn::MNIST_IMAGE_DIM;
 use crate::models::NNClassifierModel;
-use crate::optimizers::adagrad::AdagradFactory;
+use crate::optimizers::adam::AdamFactory;
 use crate::runners::write_costs_to_file;
 
 fn preprocess_narray_to_nalgebra(
@@ -145,7 +145,15 @@ pub fn train_and_validate_mnist_cnn() {
                             //SgdWMomentumFactory<1, 100, 5, 10>,
                             //SgdFactory<1, 10>,
                             //RmsPropFactory<1, 100, 9, 10>,
-                            AdagradFactory<1, 100>,
+                            //AdagradFactory<1, 100>,
+                            AdamFactory<
+                                1,
+                                1000,
+                                95,
+                                100,
+                                95,
+                                100,
+                            >,
                         >,
                         10,
                     >::new(Some(tx));
