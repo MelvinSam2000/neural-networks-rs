@@ -2,12 +2,11 @@ use nalgebra::SMatrix;
 use nalgebra::SVector;
 
 use super::NeuralNetwork;
-use crate::activation::relu::Relu;
 use crate::activation::sigmoid::Sigmoid;
 use crate::activation::softmax::Softmax;
-use crate::layers::actlayer::ActivationLayer;
 use crate::layers::conv::Conv2d;
 use crate::layers::maxpool::MaxPool2d;
+use crate::layers::relu2d::Relu2dLayer;
 use crate::layers::sequential::Sequential;
 use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
@@ -17,8 +16,6 @@ pub const MNIST_IMAGE_DIM: usize = 28;
 const POST_CONV_DIM: usize = 20;
 const CONV_WEIGHT_DIM: usize =
     MNIST_IMAGE_DIM - POST_CONV_DIM + 1;
-const POST_CONV_DIM_SQUARED: usize =
-    POST_CONV_DIM * POST_CONV_DIM;
 
 const POST_POOL_DIM: usize = 15;
 const POOL_FILTER_DIM: usize =
@@ -42,28 +39,24 @@ pub struct MyCnn<
         + OptimizerFactory<DIGITS, 1>
         + OptimizerFactory<CONV_WEIGHT_DIM, CONV_WEIGHT_DIM>,
 > {
-    conv: Vec<
-        Conv2d<
-            MNIST_IMAGE_DIM,
-            MNIST_IMAGE_DIM,
-            POST_CONV_DIM,
-            POST_CONV_DIM,
-            CONV_WEIGHT_DIM,
-            CONV_WEIGHT_DIM,
-            OPT,
-        >,
-    >,
-    relu: ActivationLayer<POST_CONV_DIM_SQUARED, Relu>,
-    maxpool: Vec<
-        MaxPool2d<
-            POST_CONV_DIM,
-            POST_CONV_DIM,
-            POST_POOL_DIM,
-            POST_POOL_DIM,
-            POOL_FILTER_DIM,
-            POOL_FILTER_DIM,
-        >,
-    >,
+    conv: [Conv2d<
+        MNIST_IMAGE_DIM,
+        MNIST_IMAGE_DIM,
+        POST_CONV_DIM,
+        POST_CONV_DIM,
+        CONV_WEIGHT_DIM,
+        CONV_WEIGHT_DIM,
+        OPT,
+    >; NUM_CONV],
+    relu: Relu2dLayer<POST_CONV_DIM, POST_CONV_DIM>,
+    maxpool: [MaxPool2d<
+        POST_CONV_DIM,
+        POST_CONV_DIM,
+        POST_POOL_DIM,
+        POST_POOL_DIM,
+        POOL_FILTER_DIM,
+        POOL_FILTER_DIM,
+    >; NUM_CONV],
     s1: Sequential<
         SEQ_LAYER_INITIAL_DIM,
         100,
@@ -92,14 +85,16 @@ where
 
     fn new() -> Self {
         // initialize convolutional layers
-        let conv =
-            (0..NUM_CONV).map(|_| Conv2d::new()).collect();
+        let conv = [
+            Conv2d::new(),
+            Conv2d::new(),
+            Conv2d::new(),
+            Conv2d::new(),
+        ];
 
-        let relu = ActivationLayer::new();
+        let relu = Relu2dLayer::new();
 
-        let maxpool = (0..NUM_CONV)
-            .map(|_| MaxPool2d::new())
-            .collect();
+        let maxpool = [MaxPool2d::new(); NUM_CONV];
 
         let s1 = Sequential::new();
         let s2 = Sequential::new();
@@ -126,9 +121,7 @@ where
         for i in 0..NUM_CONV {
             let x = x.clone();
             let x = self.conv[i].ff(x);
-            let x = mat_to_vec(x);
             let x = self.relu.ff(x);
-            let x = vec_to_mat(x);
             let x = self.maxpool[i].ff(x);
             conv_results[i] = x;
         }
@@ -153,9 +146,7 @@ where
         let g = unflatten(g);
         for i in 0..NUM_CONV {
             let g = self.maxpool[i].bp(g[i]);
-            let g = mat_to_vec(g);
             let g = self.relu.bp(g);
-            let g = vec_to_mat(g);
             self.conv[i].bp(g);
         }
     }
@@ -198,30 +189,6 @@ fn unflatten(
                         + i * POST_POOL_DIM
                         + j];
             }
-        }
-    }
-    out
-}
-
-fn mat_to_vec(
-    m: SMatrix<f64, POST_CONV_DIM, POST_CONV_DIM>,
-) -> SVector<f64, POST_CONV_DIM_SQUARED> {
-    let mut out = SVector::zeros();
-    for i in 0..POST_CONV_DIM {
-        for j in 0..POST_CONV_DIM {
-            out[i * POST_CONV_DIM + j] = m[(i, j)];
-        }
-    }
-    out
-}
-
-fn vec_to_mat(
-    v: SVector<f64, POST_CONV_DIM_SQUARED>,
-) -> SMatrix<f64, POST_CONV_DIM, POST_CONV_DIM> {
-    let mut out = SMatrix::zeros();
-    for i in 0..POST_CONV_DIM {
-        for j in 0..POST_CONV_DIM {
-            out[(i, j)] = v[i * POST_CONV_DIM + j];
         }
     }
     out

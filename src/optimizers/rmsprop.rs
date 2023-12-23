@@ -94,19 +94,3 @@ impl<
         C,
     >;
 }
-
-/*
-impl Optimizer for OptRmsProp {
-    fn update_param<const R: usize, const C: usize>(
-        &mut self,
-        weight: &mut SMatrix<f64, R, C>,
-        gradient: &SMatrix<f64, R, C>,
-    ) {
-        self.g = self.rho * &self.g;
-        //+ (1. - self.rho)
-        //    * gradient
-        //    * gradient.transpose();
-        *weight -= self.alpha * &self.g * gradient;
-    }
-}
-*/

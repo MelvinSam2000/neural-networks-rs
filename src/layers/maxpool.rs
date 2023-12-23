@@ -1,6 +1,6 @@
 use nalgebra::SMatrix;
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct MaxPool2d<
     const RX: usize,
     const CX: usize,

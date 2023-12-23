@@ -7,13 +7,15 @@ Optimizers:
 [ ] adam
 
 CNN
-[ ] Relu specific for matrix for better performance
+[x] Relu specific for matrix for better performance
 [ ] Code a wasm UI to test the model
 [ ] Export model parameters
-[ ] Try to change Vec of layers to stack array again
+[x] Try to change Vec of layers to stack array again
 [ ] Test nested conv layers
 
 RNN
-[ ] Build and test RNN (embedding finish)
+[ ] Embedding finish for RNN
+[ ] Set optimizer for RNN
+[ ] Set sent dataset preprocessing
 [ ] Build LSTM or GRU layer
 [ ] Build Transformer/Attention layer

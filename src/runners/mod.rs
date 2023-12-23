@@ -13,10 +13,10 @@ fn write_costs_to_file(file: &str, recv: Receiver<f64>) {
         costs.push(cost);
     }
     let mut destfile =
-        File::create(&format!("debug/{file}"))
+        File::create(format!("debug/{file}"))
             .expect("Please run 'mkdir debug'");
     for cost in costs {
-        writeln!(destfile, "{}", cost).unwrap();
+        writeln!(destfile, "{cost}").unwrap();
     }
 }
 
