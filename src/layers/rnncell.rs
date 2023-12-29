@@ -7,6 +7,8 @@ use rand::Rng;
 use crate::activation::deriv_all;
 use crate::activation::func_all;
 use crate::activation::ActivationFunction;
+use crate::optimizers::Optimizer;
+use crate::optimizers::OptimizerFactory;
 
 pub struct RnnCell<
     const X: usize,
@@ -14,6 +16,9 @@ pub struct RnnCell<
     const H: usize,
     const T: usize,
     F,
+    O: OptimizerFactory<H, X>
+        + OptimizerFactory<H, H>
+        + OptimizerFactory<Y, H>,
 > {
     x: [SVector<f32, X>; T],
     y: [SVector<f32, Y>; T],
@@ -22,7 +27,9 @@ pub struct RnnCell<
     wx: SMatrix<f32, H, X>,
     wh: SMatrix<f32, H, H>,
     wy: SMatrix<f32, Y, H>,
-    learn_rate: f32,
+    optwx: <O as OptimizerFactory<H, X>>::Optimizer,
+    optwh: <O as OptimizerFactory<H, H>>::Optimizer,
+    optwy: <O as OptimizerFactory<Y, H>>::Optimizer,
     act: PhantomData<F>,
 }
 
@@ -32,11 +39,15 @@ impl<
         const H: usize,
         const T: usize,
         F,
-    > RnnCell<X, Y, H, T, F>
+        O,
+    > RnnCell<X, Y, H, T, F, O>
 where
     F: ActivationFunction,
+    O: OptimizerFactory<H, X>
+        + OptimizerFactory<H, H>
+        + OptimizerFactory<Y, H>,
 {
-    pub fn new(learn_rate: f32) -> Self {
+    pub fn new() -> Self {
         let x = [SVector::zeros(); T];
         let y = [SVector::zeros(); T];
         let h = [SVector::zeros(); T];
@@ -67,6 +78,16 @@ where
 
         let act = PhantomData;
 
+        let optwx =
+            <O as OptimizerFactory<H, X>>::Optimizer::init(
+            );
+        let optwh =
+            <O as OptimizerFactory<H, H>>::Optimizer::init(
+            );
+        let optwy =
+            <O as OptimizerFactory<Y, H>>::Optimizer::init(
+            );
+
         Self {
             x,
             y,
@@ -75,7 +96,9 @@ where
             wh,
             wy,
             z,
-            learn_rate,
+            optwx,
+            optwh,
+            optwy,
             act,
         }
     }
@@ -109,31 +132,33 @@ where
         let wh_old = self.wh.clone();
 
         // update Wy
+        let mut dwy = SMatrix::zeros();
         for t in 0..T {
-            self.wy -= self.learn_rate
-                * gl[t]
-                * self.h[t].transpose();
+            dwy += gl[t] * self.h[t].transpose();
         }
 
         // update Wx and Wh
         let mut g = SVector::zeros();
         let mut gout = [SVector::zeros(); T];
+        let mut dwx = SMatrix::zeros();
+        let mut dwh = SMatrix::zeros();
         for t in (0..T).rev() {
             let g_tmp = deriv_all::<H, 1, F>(&self.z[t])
                 .component_mul(
                     &(wy_old.transpose() * gl[t] + &g),
                 );
-            self.wx -= self.learn_rate
-                * g_tmp
-                * self.x[t].transpose();
+            dwx += g_tmp * self.x[t].transpose();
             if t != 0 {
-                self.wh -= self.learn_rate
-                    * g_tmp
-                    * self.h[t - 1].transpose();
+                dwh += g_tmp * self.h[t - 1].transpose();
             }
             gout[t] = wx_old.transpose() * g_tmp;
             g += wh_old.transpose() * g_tmp;
         }
+
+        self.optwx.update_param(&mut self.wx, &dwx);
+        self.optwh.update_param(&mut self.wh, &dwh);
+        self.optwy.update_param(&mut self.wy, &dwy);
+
         gout
     }
 }

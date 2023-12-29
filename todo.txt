@@ -1,18 +1,18 @@
 General:
-[ ] Test dense2d and compare results 
 [x] Modify activation trait
-[ ] Change everything to f32
+[x] Change everything to f32
 
 CNN
 [ ] Code a wasm UI to test the model
 [ ] Export model parameters
 [x] Test nested conv layers
-[ ] Create model with dense2d
+[x] Create CNN model with dense2d
+[x] Test dense2d and compare results (bad score around 50%)
 [ ] Build on GPU
 
 RNN
 [ ] Embedding and tokenizer finish for RNN
-[ ] Set optimizer for RNN
+[x] Set optimizer for RNN
 [ ] Set sentiment analysis dataset preprocessing
 [ ] Build LSTM or GRU layer
 [ ] Test Attention layer 

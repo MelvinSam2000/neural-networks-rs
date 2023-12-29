@@ -1,6 +1,3 @@
-use nalgebra::SMatrix;
-use nalgebra::SVector;
-
 use super::ActivationFunction;
 
 pub struct Tanh;

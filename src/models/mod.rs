@@ -5,6 +5,7 @@ use nalgebra::SVector;
 pub mod ann4;
 pub mod cnn;
 pub mod cnn2;
+pub mod cnn3;
 pub mod rnnsent;
 
 pub trait NeuralNetwork<const Y: usize> {

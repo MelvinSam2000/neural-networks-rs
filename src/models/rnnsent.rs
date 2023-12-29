@@ -11,6 +11,7 @@ use crate::layers::sequential::Sequential;
 use crate::layers::softmax::Softmax;
 use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
+use crate::optimizers::adam::AdamFactory;
 use crate::optimizers::OptimizerFactory;
 
 const H: usize = 1;
@@ -26,7 +27,14 @@ pub struct RnnSentimentAnalyzer<
         + OptimizerFactory<Y, 1>,
 > {
     embedding: Embedding<N>,
-    rnn: RnnCell<X, 1, H, N, Tanh>,
+    rnn: RnnCell<
+        X,
+        1,
+        H,
+        N,
+        Tanh,
+        AdamFactory<1, 100, 9, 10, 9, 10>,
+    >,
     s1: Sequential<N, 10, Sigmoid, O>,
     s2: Sequential<10, Y, NoActivation, O>,
     softmax: Softmax<Y>,
@@ -44,7 +52,7 @@ where
 
     fn new() -> Self {
         let embedding = Embedding::new("TODO");
-        let rnn = RnnCell::new(0.1);
+        let rnn = RnnCell::new();
         let s1 = Sequential::new();
         let s2 = Sequential::new();
         let softmax = Softmax::new();
