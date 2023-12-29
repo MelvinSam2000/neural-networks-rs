@@ -47,7 +47,7 @@ where
         let x = SMatrix::zeros();
         let y = SMatrix::zeros();
 
-        // randomize W and b
+        // randomize w
         let mut rng = rand::thread_rng();
         let uniform = rand_distr::Uniform::new(-0.5, 0.5);
         for i in 0..RW {

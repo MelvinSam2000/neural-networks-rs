@@ -78,11 +78,10 @@ where
         mut g: SVector<f64, L2>,
     ) -> SVector<f64, L1> {
         g = F::grad(&self.z) * g;
-        let w_copy = self.w.clone();
         let dzdw = &g * self.a.transpose();
+        let dzda = self.w.transpose();
         self.optw.update_param(&mut self.w, &dzdw);
         self.optb.update_param(&mut self.b, &g);
-        let dzda = w_copy.transpose();
         dzda * g
     }
 }

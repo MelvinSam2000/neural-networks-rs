@@ -1,5 +1,7 @@
 use std::fs::File;
+use std::io::BufReader;
 
+use finalfusion::compat::word2vec::ReadWord2Vec;
 use finalfusion::embeddings::Embeddings;
 use finalfusion::io::ReadEmbeddings;
 use finalfusion::storage::NdArray;
@@ -12,13 +14,13 @@ pub struct Embedding<const N: usize> {
 
 impl<const N: usize> Embedding<N> {
     pub fn new(emb_file: &str) -> Self {
+        let mut reader = BufReader::new(
+            File::open(emb_file)
+                .expect("Could not open embeddings file"),
+        );
         let embeddings: Embeddings<SimpleVocab, NdArray> =
-            Embeddings::read_embeddings(
-                &mut File::open(emb_file).expect(
-                    "Could not open embeddings file",
-                ),
-            )
-            .expect("Could not parse embeddings file");
+            Embeddings::read_word2vec_binary(&mut reader)
+                .expect("Could not parse embeddings file");
         Self { embeddings }
     }
 
@@ -53,12 +55,14 @@ impl<const N: usize> Embedding<N> {
 #[test]
 #[ignore]
 fn test_load_embedding() {
-    let embedding = Embedding::<10>::new(
-        "embedding/google_word2vec.bin",
-    );
-    eprintln!(
-        "{:?}",
-        embedding.embed::<4>("Hello how are you?")
-    );
-    panic!("Panicked on purpose");
+    let embedding =
+        Embedding::<1>::new("embedding/model.bin");
+    println!("WORDS: {:?}", embedding.embeddings.vocab());
+    /*
+    println!(
+        "WORD: {:?}",
+        embedding.embeddings.embedding("apple_NOUN")
+    ); // .embed::<300>("apple"));
+       //eprintln!("{:?}", embedding.embed::<300>("orange"));
+       */
 }

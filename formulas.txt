@@ -1,0 +1,34 @@
+
+ANN:
+
+// N is 1 for 1d dense, >1 for 2d dense
+
+func ff(X: Matrix<X, N>) -> Matrix<Y, N> {
+    Z = WX + B
+    ret s(Z)
+}
+
+func bp(G: Matrix<Y, N>) -> Matrix<X, N> {
+    G = s'(Z) (*) G      // elementwise product
+    dW = G * W^t
+    dB = G
+    out = W^t * G
+    update_param(&W, dW)
+    update_param(&B, dB)
+    ret out
+}
+
+CNN: 
+
+// below is conv layer, maxpooling is more coding oriented
+
+func ff(X: Matrix<RX, CX>) -> Matrix<RY, CY> {
+    ret conv(X, W)
+}
+
+func bp(G: Matrix<RY, CY>) -> Matrix<X, N> {
+    dW = gradconv(X, G)
+    update_param(&W, dW)
+    ret conv(W, G)
+}
+
