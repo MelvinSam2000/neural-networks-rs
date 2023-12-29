@@ -83,7 +83,7 @@ where
         + OptimizerFactory<CONV_WEIGHT_DIM, CONV_WEIGHT_DIM>,
 {
     type ModelInput =
-        SMatrix<f64, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>;
+        SMatrix<f32, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>;
 
     fn new() -> Self {
         // initialize convolutional layers
@@ -120,7 +120,7 @@ where
     fn feedforward(
         &mut self,
         x: Self::ModelInput,
-    ) -> SVector<f64, DIGITS> {
+    ) -> SVector<f32, DIGITS> {
         let x = &x;
         let mut conv_results = [SMatrix::zeros(); NUM_CONV];
         for i in 0..NUM_CONV {
@@ -141,8 +141,8 @@ where
 
     fn backprop(
         &mut self,
-        y_out: SVector<f64, DIGITS>,
-        y_test: SVector<f64, DIGITS>,
+        y_out: SVector<f32, DIGITS>,
+        y_test: SVector<f32, DIGITS>,
     ) {
         let g = CrossEntropy::grad(y_out, y_test);
         let g = self.softmax.bp(g);
@@ -159,17 +159,17 @@ where
     }
 
     fn loss(
-        y_out: &SVector<f64, DIGITS>,
-        y_test: &SVector<f64, DIGITS>,
-    ) -> f64 {
+        y_out: &SVector<f32, DIGITS>,
+        y_test: &SVector<f32, DIGITS>,
+    ) -> f32 {
         CrossEntropy::func(y_out.clone(), y_test.clone())
     }
 }
 
 fn flatten(
-    v: [SMatrix<f64, POST_POOL_DIM, POST_POOL_DIM>;
+    v: [SMatrix<f32, POST_POOL_DIM, POST_POOL_DIM>;
         NUM_CONV],
-) -> SVector<f64, SEQ_LAYER_INITIAL_DIM> {
+) -> SVector<f32, SEQ_LAYER_INITIAL_DIM> {
     let mut out = SVector::zeros();
     for k in 0..NUM_CONV {
         for i in 0..POST_POOL_DIM {
@@ -184,8 +184,8 @@ fn flatten(
 }
 
 fn unflatten(
-    v: SVector<f64, SEQ_LAYER_INITIAL_DIM>,
-) -> [SMatrix<f64, POST_POOL_DIM, POST_POOL_DIM>; NUM_CONV]
+    v: SVector<f32, SEQ_LAYER_INITIAL_DIM>,
+) -> [SMatrix<f32, POST_POOL_DIM, POST_POOL_DIM>; NUM_CONV]
 {
     let mut out = [SMatrix::zeros(); NUM_CONV];
     for k in 0..NUM_CONV {

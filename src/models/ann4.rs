@@ -54,7 +54,7 @@ where
         + OptimizerFactory<L4, L3>
         + OptimizerFactory<L4, 1>,
 {
-    type ModelInput = SVector<f64, L1>;
+    type ModelInput = SVector<f32, L1>;
 
     fn new() -> Self {
         let s1 = Sequential::new();
@@ -74,7 +74,7 @@ where
     fn feedforward(
         &mut self,
         x: Self::ModelInput,
-    ) -> SVector<f64, L4> {
+    ) -> SVector<f32, L4> {
         let a = x;
         let a = self.s1.ff(a);
         let a = self.s2.ff(a);
@@ -85,8 +85,8 @@ where
 
     fn backprop(
         &mut self,
-        y_out: SVector<f64, L4>,
-        y_test: SVector<f64, L4>,
+        y_out: SVector<f32, L4>,
+        y_test: SVector<f32, L4>,
     ) {
         let g = LOSS::grad(y_out, y_test);
         let g = self.softmax.bp(g);
@@ -96,9 +96,9 @@ where
     }
 
     fn loss(
-        y_out: &SVector<f64, L4>,
-        y_test: &SVector<f64, L4>,
-    ) -> f64 {
+        y_out: &SVector<f32, L4>,
+        y_test: &SVector<f32, L4>,
+    ) -> f32 {
         LOSS::func(y_out.clone(), y_test.clone())
     }
 }
@@ -125,18 +125,18 @@ where
         + OptimizerFactory<L4, 1>,
 {
     pub fn preprocess(
-        x: &[[f64; L1]],
+        x: &[[f32; L1]],
         y: &[usize],
-    ) -> (Vec<SVector<f64, L1>>, Vec<SVector<f64, L4>>)
+    ) -> (Vec<SVector<f32, L1>>, Vec<SVector<f32, L4>>)
     {
-        let x: Vec<SVector<f64, L1>> = x
+        let x: Vec<SVector<f32, L1>> = x
             .iter()
             .map(|x| SVector::from_column_slice(x))
             .collect();
-        let y: Vec<SVector<f64, L4>> = y
+        let y: Vec<SVector<f32, L4>> = y
             .iter()
             .map(|&y| {
-                let mut y_new = SVector::<f64, L4>::zeros();
+                let mut y_new = SVector::<f32, L4>::zeros();
                 y_new[y] = 1.;
                 y_new
             })

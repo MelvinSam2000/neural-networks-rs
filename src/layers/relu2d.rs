@@ -1,7 +1,7 @@
 use nalgebra::SMatrix;
 
 pub struct Relu2dLayer<const R: usize, const C: usize> {
-    m: SMatrix<f64, R, C>,
+    m: SMatrix<f32, R, C>,
 }
 
 impl<const R: usize, const C: usize> Relu2dLayer<R, C> {
@@ -13,8 +13,8 @@ impl<const R: usize, const C: usize> Relu2dLayer<R, C> {
     // feedforward
     pub fn ff(
         &mut self,
-        x: SMatrix<f64, R, C>,
-    ) -> SMatrix<f64, R, C> {
+        x: SMatrix<f32, R, C>,
+    ) -> SMatrix<f32, R, C> {
         let mut out = SMatrix::zeros();
         for i in 0..R {
             for j in 0..C {
@@ -32,8 +32,8 @@ impl<const R: usize, const C: usize> Relu2dLayer<R, C> {
     // backprop
     pub fn bp(
         &mut self,
-        g: SMatrix<f64, R, C>,
-    ) -> SMatrix<f64, R, C> {
+        g: SMatrix<f32, R, C>,
+    ) -> SMatrix<f32, R, C> {
         g.component_mul(&self.m)
     }
 }

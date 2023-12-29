@@ -10,8 +10,8 @@ pub trait Optimizer<const R: usize, const C: usize> {
     fn init() -> Self;
     fn update_param(
         &mut self,
-        weight: &mut SMatrix<f64, R, C>,
-        gradient: &SMatrix<f64, R, C>,
+        weight: &mut SMatrix<f32, R, C>,
+        gradient: &SMatrix<f32, R, C>,
     );
     fn name() -> String;
 }
@@ -21,9 +21,9 @@ pub trait OptimizerFactory<const R: usize, const C: usize> {
 }
 
 pub fn component_invsqrt<const R: usize, const C: usize>(
-    m: &SMatrix<f64, R, C>,
-) -> SMatrix<f64, R, C> {
-    const EPSILON: f64 = 0.000001;
+    m: &SMatrix<f32, R, C>,
+) -> SMatrix<f32, R, C> {
+    const EPSILON: f32 = 0.000001;
 
     let mut out = m.clone();
     out.iter_mut().for_each(|x| {

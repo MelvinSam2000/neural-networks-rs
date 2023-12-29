@@ -13,9 +13,9 @@ pub struct Conv2d<
     const CW: usize,
     O: OptimizerFactory<RW, CW>,
 > {
-    x: SMatrix<f64, RX, CX>,
-    w: SMatrix<f64, RW, CW>,
-    y: SMatrix<f64, RY, CY>,
+    x: SMatrix<f32, RX, CX>,
+    w: SMatrix<f32, RW, CW>,
+    y: SMatrix<f32, RY, CY>,
     opt: <O as OptimizerFactory<RW, CW>>::Optimizer,
 }
 
@@ -64,8 +64,8 @@ where
     // feedforward
     pub fn ff(
         &mut self,
-        x: SMatrix<f64, RX, CX>,
-    ) -> SMatrix<f64, RY, CY> {
+        x: SMatrix<f32, RX, CX>,
+    ) -> SMatrix<f32, RY, CY> {
         self.x = x;
         self.y = conv::<RX, CX, RW, CW, RY, CY>(
             &self.x, &self.w,
@@ -76,8 +76,8 @@ where
     // backprop
     pub fn bp(
         &mut self,
-        g: SMatrix<f64, RY, CY>,
-    ) -> SMatrix<f64, RX, CX> {
+        g: SMatrix<f32, RY, CY>,
+    ) -> SMatrix<f32, RX, CX> {
         let w_clone = self.w.clone();
         let grad =
             conv::<RX, CX, RY, CY, RW, CW>(&self.x, &g);
@@ -94,9 +94,9 @@ fn conv<
     const R3: usize,
     const C3: usize,
 >(
-    a: &SMatrix<f64, R1, C1>,
-    b: &SMatrix<f64, R2, C2>,
-) -> SMatrix<f64, R3, C3> {
+    a: &SMatrix<f32, R1, C1>,
+    b: &SMatrix<f32, R2, C2>,
+) -> SMatrix<f32, R3, C3> {
     let mut c = SMatrix::zeros();
     for i1 in 0..R3 {
         for j1 in 0..C3 {
@@ -119,9 +119,9 @@ fn grad_conv<
     const R3: usize,
     const C3: usize,
 >(
-    a: &SMatrix<f64, R1, C1>,
-    b: &SMatrix<f64, R2, C2>,
-) -> SMatrix<f64, R3, C3> {
+    a: &SMatrix<f32, R1, C1>,
+    b: &SMatrix<f32, R2, C2>,
+) -> SMatrix<f32, R3, C3> {
     let mut c = SMatrix::zeros();
     for i1 in 0..R1 {
         for j1 in 0..C1 {

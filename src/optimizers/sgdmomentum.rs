@@ -11,7 +11,7 @@ pub struct SgdWMomentum<
     const R: usize,
     const C: usize,
 > {
-    v: SMatrix<f64, R, C>,
+    v: SMatrix<f32, R, C>,
 }
 
 impl<
@@ -38,11 +38,11 @@ impl<
 
     fn update_param(
         &mut self,
-        weight: &mut SMatrix<f64, R, C>,
-        gradient: &SMatrix<f64, R, C>,
+        weight: &mut SMatrix<f32, R, C>,
+        gradient: &SMatrix<f32, R, C>,
     ) {
-        let alpha = ALPHA_NUM as f64 / ALPHA_DEN as f64;
-        let beta = BETA_NUM as f64 / BETA_DEN as f64;
+        let alpha = ALPHA_NUM as f32 / ALPHA_DEN as f32;
+        let beta = BETA_NUM as f32 / BETA_DEN as f32;
         self.v = beta * &self.v + (1. - beta) * gradient;
         *weight -= alpha * &self.v;
     }

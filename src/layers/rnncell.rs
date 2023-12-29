@@ -15,14 +15,14 @@ pub struct RnnCell<
     const T: usize,
     F,
 > {
-    x: [SVector<f64, X>; T],
-    y: [SVector<f64, Y>; T],
-    h: [SVector<f64, H>; T],
-    z: [SVector<f64, H>; T],
-    wx: SMatrix<f64, H, X>,
-    wh: SMatrix<f64, H, H>,
-    wy: SMatrix<f64, Y, H>,
-    learn_rate: f64,
+    x: [SVector<f32, X>; T],
+    y: [SVector<f32, Y>; T],
+    h: [SVector<f32, H>; T],
+    z: [SVector<f32, H>; T],
+    wx: SMatrix<f32, H, X>,
+    wh: SMatrix<f32, H, H>,
+    wy: SMatrix<f32, Y, H>,
+    learn_rate: f32,
     act: PhantomData<F>,
 }
 
@@ -36,7 +36,7 @@ impl<
 where
     F: ActivationFunction,
 {
-    pub fn new(learn_rate: f64) -> Self {
+    pub fn new(learn_rate: f32) -> Self {
         let x = [SVector::zeros(); T];
         let y = [SVector::zeros(); T];
         let h = [SVector::zeros(); T];
@@ -83,8 +83,8 @@ where
     // feedforward
     pub fn ff(
         &mut self,
-        x: [SVector<f64, X>; T],
-    ) -> [SVector<f64, Y>; T] {
+        x: [SVector<f32, X>; T],
+    ) -> [SVector<f32, Y>; T] {
         self.x = x;
         for t in 0..T {
             self.z[t] = self.wx * self.x[t]
@@ -102,8 +102,8 @@ where
     // backprop
     pub fn bp(
         &mut self,
-        gl: [SVector<f64, Y>; T],
-    ) -> [SVector<f64, X>; T] {
+        gl: [SVector<f32, Y>; T],
+    ) -> [SVector<f32, X>; T] {
         let wx_old = self.wx.clone();
         let wy_old = self.wy.clone();
         let wh_old = self.wh.clone();

@@ -15,9 +15,9 @@ impl<const R: usize, const C: usize> Softmax2d<R, C> {
     // feedforward
     pub fn ff(
         &mut self,
-        x: SMatrix<f64, R, C>,
-    ) -> SMatrix<f64, R, C> {
-        let mut out: SMatrix<f64, R, C> = SMatrix::zero();
+        x: SMatrix<f32, R, C>,
+    ) -> SMatrix<f32, R, C> {
+        let mut out: SMatrix<f32, R, C> = SMatrix::zero();
         for i in 0..R {
             let row = x.row(i).transpose();
             let row = self.softmaxs[i].ff(row);
@@ -29,9 +29,9 @@ impl<const R: usize, const C: usize> Softmax2d<R, C> {
     // backprop
     pub fn bp(
         &mut self,
-        g: SMatrix<f64, R, C>,
-    ) -> SMatrix<f64, R, C> {
-        let mut out: SMatrix<f64, R, C> = SMatrix::zero();
+        g: SMatrix<f32, R, C>,
+    ) -> SMatrix<f32, R, C> {
+        let mut out: SMatrix<f32, R, C> = SMatrix::zero();
         for i in 0..R {
             let row = g.row(i).transpose();
             let row = self.softmaxs[i].bp(row);

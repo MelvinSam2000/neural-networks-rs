@@ -16,10 +16,10 @@ pub struct Dense2D<
     F,
     O: OptimizerFactory<Y, X> + OptimizerFactory<Y, N>,
 > {
-    x: SMatrix<f64, X, N>,
-    w: SMatrix<f64, Y, X>,
-    b: SMatrix<f64, Y, N>,
-    z: SMatrix<f64, Y, N>,
+    x: SMatrix<f32, X, N>,
+    w: SMatrix<f32, Y, X>,
+    b: SMatrix<f32, Y, N>,
+    z: SMatrix<f32, Y, N>,
     act: PhantomData<F>,
     optw: <O as OptimizerFactory<Y, X>>::Optimizer,
     optb: <O as OptimizerFactory<Y, N>>::Optimizer,
@@ -74,8 +74,8 @@ where
     // feedforward
     pub fn ff(
         &mut self,
-        x: SMatrix<f64, X, N>,
-    ) -> SMatrix<f64, Y, N> {
+        x: SMatrix<f32, X, N>,
+    ) -> SMatrix<f32, Y, N> {
         self.x = x;
         self.z = self.w * self.x + self.b;
         func_all::<Y, N, F>(&self.z)
@@ -84,8 +84,8 @@ where
     // backprop
     pub fn bp(
         &mut self,
-        mut g: SMatrix<f64, Y, N>,
-    ) -> SMatrix<f64, X, N> {
+        mut g: SMatrix<f32, Y, N>,
+    ) -> SMatrix<f32, X, N> {
         g = deriv_all::<Y, N, F>(&self.z).component_mul(&g);
         let dw = &g * self.x.transpose();
         let db = &g;

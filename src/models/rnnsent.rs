@@ -60,7 +60,7 @@ where
     fn feedforward(
         &mut self,
         x: Self::ModelInput,
-    ) -> SVector<f64, Y> {
+    ) -> SVector<f32, Y> {
         let x = self.embedding.embed(&x);
         let x = self.rnn.ff(x);
         let x = flatten(x);
@@ -72,8 +72,8 @@ where
 
     fn backprop(
         &mut self,
-        y_out: SVector<f64, Y>,
-        y_test: SVector<f64, Y>,
+        y_out: SVector<f32, Y>,
+        y_test: SVector<f32, Y>,
     ) {
         let g = CrossEntropy::grad(y_out, y_test);
         let g = self.softmax.bp(g);
@@ -84,16 +84,16 @@ where
     }
 
     fn loss(
-        y_out: &SVector<f64, Y>,
-        y_test: &SVector<f64, Y>,
-    ) -> f64 {
+        y_out: &SVector<f32, Y>,
+        y_test: &SVector<f32, Y>,
+    ) -> f32 {
         CrossEntropy::func(y_out.clone(), y_test.clone())
     }
 }
 
 fn flatten<const T: usize>(
-    v: [SVector<f64, 1>; T],
-) -> SVector<f64, T> {
+    v: [SVector<f32, 1>; T],
+) -> SVector<f32, T> {
     let mut out = SVector::zeros();
     for t in 0..T {
         out[t] = v[t][0];
@@ -102,8 +102,8 @@ fn flatten<const T: usize>(
 }
 
 fn unflatten<const T: usize>(
-    v: SVector<f64, T>,
-) -> [SVector<f64, 1>; T] {
+    v: SVector<f32, T>,
+) -> [SVector<f32, 1>; T] {
     let mut out = [SVector::zeros(); T];
     for t in 0..T {
         out[t] = Vector1::new(v[t]);

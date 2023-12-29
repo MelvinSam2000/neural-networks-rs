@@ -7,7 +7,7 @@ use crate::activation::func_all;
 use crate::activation::ActivationFunction;
 
 pub struct ActivationLayer<const N: usize, F> {
-    z: SVector<f64, N>,
+    z: SVector<f32, N>,
     f: PhantomData<F>,
 }
 
@@ -25,8 +25,8 @@ where
     // feedforward
     pub fn ff(
         &mut self,
-        x: SVector<f64, N>,
-    ) -> SVector<f64, N> {
+        x: SVector<f32, N>,
+    ) -> SVector<f32, N> {
         self.z = x;
         func_all::<N, 1, F>(&self.z)
     }
@@ -34,8 +34,8 @@ where
     // backprop
     pub fn bp(
         &mut self,
-        g: SVector<f64, N>,
-    ) -> SVector<f64, N> {
+        g: SVector<f32, N>,
+    ) -> SVector<f32, N> {
         deriv_all::<N, 1, F>(&self.z).component_mul(&g)
     }
 }

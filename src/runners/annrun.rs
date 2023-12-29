@@ -32,7 +32,7 @@ fn train_and_validate<
         + OptimizerFactory<L4, 1>,
 >(
     csv_file: &str,
-    debug_channel: Option<Sender<f64>>,
+    debug_channel: Option<Sender<f32>>,
 ) {
     let (x_train, y_train, x_test, y_test) =
         get_data_csv(csv_file, 0.8)
@@ -84,12 +84,12 @@ pub fn train_and_validate_csv_ann() {
                 4,
                 6,
                 3,
-                Sigmoid,
+                Relu,
                 Sigmoid,
                 CrossEntropy,
                 //SgdFactory<8, 10>,
                 //RmsPropFactory<8, 10, 9, 10>,
-                AdamFactory<8, 10, 8, 10, 8, 10>,
+                AdamFactory<8, 10, 9, 10, 9, 10>,
             >("data/knn.csv", Some(tx));
             write_costs_to_file("knn.csv", rx);
         },
@@ -101,11 +101,11 @@ pub fn train_and_validate_csv_ann() {
                 10,
                 3,
                 Relu,
-                Relu,
+                Sigmoid,
                 CrossEntropy,
                 //SgdWMomentumFactory<1, 10, 8, 10>,
                 //RmsPropFactory<1, 10, 9, 10>,
-                AdamFactory<1, 10, 8, 10, 8, 10>,
+                AdamFactory<1, 100, 9, 10, 9, 10>,
             >("data/gda.csv", Some(tx));
             write_costs_to_file("gda.csv", rx);
         },

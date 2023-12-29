@@ -16,10 +16,10 @@ pub struct Sequential<
     F,
     O: OptimizerFactory<L2, L1> + OptimizerFactory<L2, 1>,
 > {
-    a: SVector<f64, L1>,
-    w: SMatrix<f64, L2, L1>,
-    b: SVector<f64, L2>,
-    z: SVector<f64, L2>,
+    a: SVector<f32, L1>,
+    w: SMatrix<f32, L2, L1>,
+    b: SVector<f32, L2>,
+    z: SVector<f32, L2>,
     act: PhantomData<F>,
     optw: <O as OptimizerFactory<L2, L1>>::Optimizer,
     optb: <O as OptimizerFactory<L2, 1>>::Optimizer,
@@ -67,8 +67,8 @@ where
     // feedforward
     pub fn ff(
         &mut self,
-        a: SVector<f64, L1>,
-    ) -> SVector<f64, L2> {
+        a: SVector<f32, L1>,
+    ) -> SVector<f32, L2> {
         self.a = a;
         self.z = self.w * self.a + self.b;
         func_all::<L2, 1, F>(&self.z)
@@ -77,8 +77,8 @@ where
     // backprop
     pub fn bp(
         &mut self,
-        mut g: SVector<f64, L2>,
-    ) -> SVector<f64, L1> {
+        mut g: SVector<f32, L2>,
+    ) -> SVector<f32, L1> {
         g = deriv_all::<L2, 1, F>(&self.z)
             .component_mul(&g);
         let dzdw = &g * self.a.transpose();

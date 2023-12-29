@@ -41,16 +41,16 @@ impl<
     // feedforward
     pub fn ff(
         &mut self,
-        x: SMatrix<f64, RX, CX>,
-    ) -> SMatrix<f64, RY, CY> {
+        x: SMatrix<f32, RX, CX>,
+    ) -> SMatrix<f32, RY, CY> {
         maxpool(&x, &mut self.m)
     }
 
     // backprop
     pub fn bp(
         &mut self,
-        g: SMatrix<f64, RY, CY>,
-    ) -> SMatrix<f64, RX, CX> {
+        g: SMatrix<f32, RY, CY>,
+    ) -> SMatrix<f32, RX, CX> {
         let mut out = SMatrix::zeros();
         for i in 0..RY {
             for j in 0..CY {
@@ -67,13 +67,13 @@ fn maxpool<
     const RY: usize,
     const CY: usize,
 >(
-    a: &SMatrix<f64, RX, CX>,
+    a: &SMatrix<f32, RX, CX>,
     m: &mut [[(usize, usize); CY]; RY],
-) -> SMatrix<f64, RY, CY> {
+) -> SMatrix<f32, RY, CY> {
     let mut c = SMatrix::zeros();
     for i1 in 0..RY {
         for j1 in 0..CY {
-            let mut curmax = f64::MIN;
+            let mut curmax = f32::MIN;
             let mut curidx = (0, 0);
             for i2 in 0..RX - RY + 1 {
                 for j2 in 0..CX - CY + 1 {

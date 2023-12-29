@@ -2,7 +2,7 @@ use nalgebra::SMatrix;
 use nalgebra::SVector;
 
 pub struct Softmax<const N: usize> {
-    s: SVector<f64, N>,
+    s: SVector<f32, N>,
 }
 
 impl<const N: usize> Softmax<N> {
@@ -13,9 +13,9 @@ impl<const N: usize> Softmax<N> {
 
     pub fn ff(
         &mut self,
-        x: SVector<f64, N>,
-    ) -> SVector<f64, N> {
-        let sum_exp: f64 =
+        x: SVector<f32, N>,
+    ) -> SVector<f32, N> {
+        let sum_exp: f32 =
             x.iter().copied().map(|xi| xi.exp()).sum();
         let out =
             x.iter().copied().map(|xi| xi.exp() / sum_exp);
@@ -25,9 +25,9 @@ impl<const N: usize> Softmax<N> {
 
     pub fn bp(
         &mut self,
-        g: SVector<f64, N>,
-    ) -> SVector<f64, N> {
-        let mut ds: SMatrix<f64, N, N> = SMatrix::zeros();
+        g: SVector<f32, N>,
+    ) -> SVector<f32, N> {
+        let mut ds: SMatrix<f32, N, N> = SMatrix::zeros();
         for i in 0..N {
             for j in 0..N {
                 ds[(i, j)] = if i == j {

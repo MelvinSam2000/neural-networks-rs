@@ -14,8 +14,8 @@ pub struct Adam<
     const R: usize,
     const C: usize,
 > {
-    m: SMatrix<f64, R, C>,
-    v: SMatrix<f64, R, C>,
+    m: SMatrix<f32, R, C>,
+    v: SMatrix<f32, R, C>,
     t: i32,
 }
 
@@ -49,13 +49,13 @@ impl<
 
     fn update_param(
         &mut self,
-        weight: &mut SMatrix<f64, R, C>,
-        gradient: &SMatrix<f64, R, C>,
+        weight: &mut SMatrix<f32, R, C>,
+        gradient: &SMatrix<f32, R, C>,
     ) {
         const T: i32 = 50;
-        let alpha = ALPHA_NUM as f64 / ALPHA_DEN as f64;
-        let beta1 = BETA1_NUM as f64 / BETA1_DEN as f64;
-        let beta2 = BETA2_NUM as f64 / BETA2_DEN as f64;
+        let alpha = ALPHA_NUM as f32 / ALPHA_DEN as f32;
+        let beta1 = BETA1_NUM as f32 / BETA1_DEN as f32;
+        let beta2 = BETA2_NUM as f32 / BETA2_DEN as f32;
 
         self.m = beta1 * self.m + (1. - beta1) * gradient;
         self.v = beta2 * self.v

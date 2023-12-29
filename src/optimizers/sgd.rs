@@ -21,10 +21,10 @@ impl<
 
     fn update_param(
         &mut self,
-        weight: &mut SMatrix<f64, R, C>,
-        gradient: &SMatrix<f64, R, C>,
+        weight: &mut SMatrix<f32, R, C>,
+        gradient: &SMatrix<f32, R, C>,
     ) {
-        let alpha = ALPHA_NUM as f64 / ALPHA_DEN as f64;
+        let alpha = ALPHA_NUM as f32 / ALPHA_DEN as f32;
         *weight -= alpha * gradient;
     }
 

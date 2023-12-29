@@ -7,7 +7,7 @@ use csv::ReaderBuilder;
 pub mod annrun;
 pub mod cnnrun;
 
-fn write_costs_to_file(file: &str, recv: Receiver<f64>) {
+fn write_costs_to_file(file: &str, recv: Receiver<f32>) {
     let mut costs = vec![];
     while let Ok(cost) = recv.recv() {
         costs.push(cost);
@@ -22,11 +22,11 @@ fn write_costs_to_file(file: &str, recv: Receiver<f64>) {
 
 pub fn get_data_csv<const X: usize>(
     file_path: &str,
-    train_test_ratio: f64,
+    train_test_ratio: f32,
 ) -> anyhow::Result<(
-    Vec<[f64; X]>,
+    Vec<[f32; X]>,
     Vec<usize>,
-    Vec<[f64; X]>,
+    Vec<[f32; X]>,
     Vec<usize>,
 )> {
     let file = File::open(file_path)?;
@@ -37,18 +37,18 @@ pub fn get_data_csv<const X: usize>(
         .map(Result::unwrap)
         .collect::<Vec<_>>();
     let train_limit =
-        (records.len() as f64 * train_test_ratio) as usize;
+        (records.len() as f32 * train_test_ratio) as usize;
 
-    let mut x_train = Vec::<[f64; X]>::new();
+    let mut x_train = Vec::<[f32; X]>::new();
     let mut y_train = Vec::<usize>::new();
-    let mut x_test = Vec::<[f64; X]>::new();
+    let mut x_test = Vec::<[f32; X]>::new();
     let mut y_test = Vec::<usize>::new();
 
     let mut i = 0;
     while i < train_limit {
         let mut x = [0.0; X];
         for j in 0..X {
-            x[j] = records[i][j].parse::<f64>()?;
+            x[j] = records[i][j].parse::<f32>()?;
         }
         let y = records[i][X].parse::<usize>()?;
         x_train.push(x);
@@ -58,7 +58,7 @@ pub fn get_data_csv<const X: usize>(
     while i < records.len() {
         let mut x = [0.0; X];
         for j in 0..X {
-            x[j] = records[i][j].parse::<f64>()?;
+            x[j] = records[i][j].parse::<f32>()?;
         }
         let y = records[i][X].parse::<usize>()?;
         x_test.push(x);

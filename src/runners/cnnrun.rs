@@ -12,17 +12,16 @@ use rayon::ThreadPoolBuilder;
 use crate::models::cnn::MyCnn;
 use crate::models::cnn::DIGITS;
 use crate::models::cnn::MNIST_IMAGE_DIM;
-use crate::models::cnn2::MyCnn2;
 use crate::models::NNClassifierModel;
 use crate::optimizers::adam::AdamFactory;
 use crate::runners::write_costs_to_file;
 
 fn preprocess_narray_to_nalgebra(
-    x_nd: Array3<f64>,
-    y_nd: Array2<f64>,
+    x_nd: Array3<f32>,
+    y_nd: Array2<f32>,
 ) -> (
-    Vec<SMatrix<f64, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>>,
-    Vec<SVector<f64, DIGITS>>,
+    Vec<SMatrix<f32, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>>,
+    Vec<SVector<f32, DIGITS>>,
 ) {
     let (n, r, c) = x_nd.dim();
     let mut x_out = vec![];
@@ -43,10 +42,10 @@ fn preprocess_narray_to_nalgebra(
 }
 
 fn get_datasets() -> (
-    Vec<SMatrix<f64, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>>,
-    Vec<SVector<f64, DIGITS>>,
-    Vec<SMatrix<f64, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>>,
-    Vec<SVector<f64, DIGITS>>,
+    Vec<SMatrix<f32, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>>,
+    Vec<SVector<f32, DIGITS>>,
+    Vec<SMatrix<f32, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>>,
+    Vec<SVector<f32, DIGITS>>,
 ) {
     const TRAINING_DATASET: usize = 20000;
     const TEST_DATASET: usize = 2000;
@@ -74,32 +73,32 @@ fn get_datasets() -> (
         trn_img,
     )
     .expect("Error converting images to Array3 struct")
-    .map(|x| *x as f64 / 256.0);
+    .map(|x| *x as f32 / 256.0);
 
     // Convert the returned Mnist struct to Array2 format
-    let train_labels: Array2<f64> = Array2::from_shape_vec(
+    let train_labels: Array2<f32> = Array2::from_shape_vec(
         (TRAINING_DATASET, 1),
         trn_lbl,
     )
     .expect(
         "Error converting training labels to Array2 struct",
     )
-    .map(|x| *x as f64);
+    .map(|x| *x as f32);
 
-    let test_data: Array3<f64> = Array3::from_shape_vec(
+    let test_data: Array3<f32> = Array3::from_shape_vec(
         (TEST_DATASET, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM),
         tst_img,
     )
     .expect("Error converting images to Array3 struct")
-    .map(|x| *x as f64 / 256.);
+    .map(|x| *x as f32 / 256.);
 
-    let test_labels: Array2<f64> =
+    let test_labels: Array2<f32> =
         Array2::from_shape_vec((TEST_DATASET, 1), tst_lbl)
             .expect(
                 "Error converting testing labels to \
                  Array2 struct",
             )
-            .map(|x| *x as f64);
+            .map(|x| *x as f32);
 
     let (x_train, y_train) = preprocess_narray_to_nalgebra(
         train_data,
@@ -142,7 +141,6 @@ pub fn train_and_validate_mnist_cnn() {
                 let (tx, rx) = mpsc::channel();
                 let mut model =
                     NNClassifierModel::<
-                        /*
                         MyCnn<
                             //SgdWMomentumFactory<1, 100, 5, 10>,
                             //SgdFactory<1, 10>,
@@ -156,22 +154,22 @@ pub fn train_and_validate_mnist_cnn() {
                                 95,
                                 100,
                             >,
-                        >,
-                        */
-                        MyCnn2<
-                            //SgdWMomentumFactory<1, 100, 5, 10>,
-                            //SgdFactory<1, 10>,
-                            //RmsPropFactory<1, 100, 9, 10>,
-                            //AdagradFactory<1, 100>,
-                            AdamFactory<
-                                1,
-                                1000,
-                                90,
-                                100,
-                                90,
-                                100,
-                            >,
-                        >,
+                        >, /*
+                           MyCnn2<
+                               //SgdWMomentumFactory<1, 100, 5, 10>,
+                               //SgdFactory<1, 10>,
+                               //RmsPropFactory<1, 100, 9, 10>,
+                               //AdagradFactory<1, 100>,
+                               AdamFactory<
+                                   1,
+                                   1000,
+                                   90,
+                                   100,
+                                   90,
+                                   100,
+                               >,
+                           >,
+                           */
                         10,
                     >::new(Some(tx));
                 let dbg_thread =

@@ -12,7 +12,7 @@ pub struct RmsProp<
     const R: usize,
     const C: usize,
 > {
-    g: SMatrix<f64, R, C>,
+    g: SMatrix<f32, R, C>,
 }
 
 impl<
@@ -39,11 +39,11 @@ impl<
 
     fn update_param(
         &mut self,
-        weight: &mut SMatrix<f64, R, C>,
-        gradient: &SMatrix<f64, R, C>,
+        weight: &mut SMatrix<f32, R, C>,
+        gradient: &SMatrix<f32, R, C>,
     ) {
-        let alpha = ALPHA_NUM as f64 / ALPHA_DEN as f64;
-        let rho = RHO_NUM as f64 / RHO_DEN as f64;
+        let alpha = ALPHA_NUM as f32 / ALPHA_DEN as f32;
+        let rho = RHO_NUM as f32 / RHO_DEN as f32;
         self.g = rho * &self.g
             + (1. - rho) * gradient.component_mul(gradient);
         *weight -= alpha

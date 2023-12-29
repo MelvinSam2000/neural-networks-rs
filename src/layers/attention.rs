@@ -11,15 +11,15 @@ pub struct Attention<
     const D: usize,
     O: OptimizerFactory<M, D> + OptimizerFactory<M, M>,
 > {
-    x: SMatrix<f64, N, M>,
-    wk: SMatrix<f64, M, D>,
-    wq: SMatrix<f64, M, D>,
-    wv: SMatrix<f64, M, M>,
-    k: SMatrix<f64, N, D>,
-    q: SMatrix<f64, N, D>,
-    v: SMatrix<f64, N, M>,
-    z: SMatrix<f64, N, N>,
-    s: SMatrix<f64, N, N>,
+    x: SMatrix<f32, N, M>,
+    wk: SMatrix<f32, M, D>,
+    wq: SMatrix<f32, M, D>,
+    wv: SMatrix<f32, M, M>,
+    k: SMatrix<f32, N, D>,
+    q: SMatrix<f32, N, D>,
+    v: SMatrix<f32, N, M>,
+    z: SMatrix<f32, N, N>,
+    s: SMatrix<f32, N, N>,
     softmax2d: Softmax2d<N, N>,
     optkq: <O as OptimizerFactory<M, D>>::Optimizer,
     optv: <O as OptimizerFactory<M, M>>::Optimizer,
@@ -80,22 +80,22 @@ where
 
     pub fn ff(
         &mut self,
-        x: SMatrix<f64, N, M>,
-    ) -> SMatrix<f64, N, M> {
+        x: SMatrix<f32, N, M>,
+    ) -> SMatrix<f32, N, M> {
         self.x = x;
         self.k = self.x * self.wk;
         self.q = self.x * self.wq;
         self.v = self.x * self.wv;
         self.z = self.q * self.k.transpose();
-        self.z = self.z / (D as f64).sqrt();
+        self.z = self.z / (D as f32).sqrt();
         self.s = self.softmax2d.ff(self.s);
         self.s * self.v
     }
 
     pub fn bp(
         &mut self,
-        g: SMatrix<f64, N, M>,
-    ) -> SMatrix<f64, N, M> {
+        g: SMatrix<f32, N, M>,
+    ) -> SMatrix<f32, N, M> {
         let gs = &g * self.v.transpose();
         // v path
         let gv = self.s.transpose() * &g;
@@ -103,7 +103,7 @@ where
         let dj_dv = &gv * self.wv.transpose();
         // k and q path
         let gs = self.softmax2d.bp(gs);
-        let gs = gs / (D as f64).sqrt();
+        let gs = gs / (D as f32).sqrt();
         let gk = gs.transpose() * self.q;
         let gq = gs * self.k;
         let dj_dwk = self.x.transpose() * &gk;

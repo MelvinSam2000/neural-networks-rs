@@ -13,21 +13,21 @@ pub trait NeuralNetwork<const Y: usize> {
     fn feedforward(
         &mut self,
         x: Self::ModelInput,
-    ) -> SVector<f64, Y>;
+    ) -> SVector<f32, Y>;
     fn backprop(
         &mut self,
-        y_out: SVector<f64, Y>,
-        y_test: SVector<f64, Y>,
+        y_out: SVector<f32, Y>,
+        y_test: SVector<f32, Y>,
     );
     fn loss(
-        y_out: &SVector<f64, Y>,
-        y_test: &SVector<f64, Y>,
-    ) -> f64;
+        y_out: &SVector<f32, Y>,
+        y_test: &SVector<f32, Y>,
+    ) -> f32;
 }
 
 pub struct NNClassifierModel<T, const Y: usize> {
     model: T,
-    debug_channel: Option<Sender<f64>>,
+    debug_channel: Option<Sender<f32>>,
 }
 
 impl<T, const Y: usize> NNClassifierModel<T, Y>
@@ -36,7 +36,7 @@ where
     T::ModelInput: Clone,
     T::ModelInput: Copy,
 {
-    pub fn new(debug_channel: Option<Sender<f64>>) -> Self {
+    pub fn new(debug_channel: Option<Sender<f32>>) -> Self {
         let model = T::new();
         Self {
             model,
@@ -47,7 +47,7 @@ where
     pub fn train(
         &mut self,
         x_train: &[T::ModelInput],
-        y_train: &[SVector<f64, Y>],
+        y_train: &[SVector<f32, Y>],
     ) {
         if x_train.len() != y_train.len() {
             panic!(
@@ -70,7 +70,7 @@ where
                 if n < M || i % k == 0 {
                     print!(
                         "Training completion: \r{:.0}%",
-                        (i as f64 / n as f64) * 100.
+                        (i as f32 / n as f32) * 100.
                     );
                     let cost = T::loss(&y_out, &y);
                     channel.send(cost).unwrap();
@@ -99,7 +99,7 @@ where
         &mut self,
         x_test: &[T::ModelInput],
         y_test: &[usize],
-    ) -> f64 {
+    ) -> f32 {
         if x_test.len() != y_test.len() {
             panic!(
                 "x_test and y_test have different sizes \
@@ -108,7 +108,7 @@ where
         }
 
         let n = x_test.len();
-        let count: f64 = (0..n)
+        let count: f32 = (0..n)
             .map(|i| {
                 if self.predict(x_test[i]) == y_test[i] {
                     1.
@@ -117,6 +117,6 @@ where
                 }
             })
             .sum();
-        count / n as f64
+        count / n as f32
     }
 }
