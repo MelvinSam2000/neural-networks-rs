@@ -4,7 +4,6 @@ use std::sync::mpsc::{self};
 use super::write_costs_to_file;
 use crate::activation::relu::Relu;
 use crate::activation::sigmoid::Sigmoid;
-use crate::activation::softmax::Softmax;
 use crate::activation::ActivationFunction;
 use crate::dataset::get_data_csv;
 use crate::loss::crossent::CrossEntropy;
@@ -22,9 +21,8 @@ fn train_and_validate<
     const L2: usize,
     const L3: usize,
     const L4: usize,
-    F1: ActivationFunction<L2>,
-    F2: ActivationFunction<L3>,
-    F3: ActivationFunction<L4>,
+    F1: ActivationFunction,
+    F2: ActivationFunction,
     LOSS: LossFunction<L4>,
     OPT: OptimizerFactory<L2, L1>
         + OptimizerFactory<L2, 1>
@@ -47,7 +45,6 @@ fn train_and_validate<
         L4,
         F1,
         F2,
-        F3,
         LOSS,
         OPT,
     >::preprocess(
@@ -60,12 +57,11 @@ fn train_and_validate<
         L4,
         F1,
         F2,
-        F3,
         LOSS,
         OPT,
     >::preprocess(&x_test, &y_test);
     let mut model = NNClassifierModel::<
-        Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS, OPT>,
+        Ann4<L1, L2, L3, L4, F1, F2, LOSS, OPT>,
         L4,
     >::new(debug_channel);
     model.train(&x_train, &y_train);
@@ -90,7 +86,6 @@ pub fn train_and_validate_csv_ann() {
                 3,
                 Sigmoid,
                 Sigmoid,
-                Softmax,
                 CrossEntropy,
                 //SgdFactory<8, 10>,
                 //RmsPropFactory<8, 10, 9, 10>,
@@ -107,7 +102,6 @@ pub fn train_and_validate_csv_ann() {
                 3,
                 Relu,
                 Relu,
-                Softmax,
                 CrossEntropy,
                 //SgdWMomentumFactory<1, 10, 8, 10>,
                 //RmsPropFactory<1, 10, 9, 10>,
@@ -122,7 +116,6 @@ pub fn train_and_validate_csv_ann() {
                 10,
                 6,
                 2,
-                Sigmoid,
                 Sigmoid,
                 Sigmoid,
                 CrossEntropy,
@@ -142,7 +135,6 @@ pub fn train_and_validate_csv_ann() {
                 2,
                 Sigmoid,
                 Sigmoid,
-                Softmax,
                 CrossEntropy,
                 //SgdFactory<1, 2>,
                 //RmsPropFactory<1, 2, 9, 10>,
@@ -159,7 +151,6 @@ pub fn train_and_validate_csv_ann() {
                 2,
                 Relu,
                 Sigmoid,
-                Softmax,
                 CrossEntropy,
                 //SgdFactory<1, 2>,
                 SgdWMomentumFactory<1, 2, 8, 10>,

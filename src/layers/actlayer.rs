@@ -2,6 +2,8 @@ use std::marker::PhantomData;
 
 use nalgebra::SVector;
 
+use crate::activation::deriv_all;
+use crate::activation::func_all;
 use crate::activation::ActivationFunction;
 
 pub struct ActivationLayer<const N: usize, F> {
@@ -11,7 +13,7 @@ pub struct ActivationLayer<const N: usize, F> {
 
 impl<const N: usize, F> ActivationLayer<N, F>
 where
-    F: ActivationFunction<N>,
+    F: ActivationFunction,
 {
     pub fn new() -> Self {
         let z = SVector::zeros();
@@ -26,7 +28,7 @@ where
         x: SVector<f64, N>,
     ) -> SVector<f64, N> {
         self.z = x;
-        F::func(&self.z)
+        func_all::<N, 1, F>(&self.z)
     }
 
     // backprop
@@ -34,6 +36,6 @@ where
         &mut self,
         g: SVector<f64, N>,
     ) -> SVector<f64, N> {
-        F::grad(&self.z) * g
+        deriv_all::<N, 1, F>(&self.z).component_mul(&g)
     }
 }

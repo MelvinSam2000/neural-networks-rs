@@ -1,20 +1,20 @@
-Optimizers:
-[x] Establish framework for optmizers
-[x] SGD
-[x] SGD w momentum
-[x] adagrad 
-[x] RMSprop 
-[x] adam
-[x] name property
+General:
+[ ] Test dense2d and compare results 
+[x] Modify activation trait
+[ ] Change everything to f32
 
 CNN
 [ ] Code a wasm UI to test the model
 [ ] Export model parameters
 [x] Test nested conv layers
+[ ] Create model with dense2d
+[ ] Build on GPU
 
 RNN
-[ ] Embedding finish for RNN
+[ ] Embedding and tokenizer finish for RNN
 [ ] Set optimizer for RNN
 [ ] Set sentiment analysis dataset preprocessing
 [ ] Build LSTM or GRU layer
-[ ] Build Transformer/Attention layer
+[ ] Test Attention layer 
+[ ] Build Multihead attention 
+[ ] Build transformer 

@@ -4,12 +4,13 @@ use nalgebra::SVector;
 use super::cnn::DIGITS;
 use super::cnn::MNIST_IMAGE_DIM;
 use super::NeuralNetwork;
+use crate::activation::noact::NoActivation;
 use crate::activation::sigmoid::Sigmoid;
-use crate::activation::softmax::Softmax;
 use crate::layers::conv::Conv2d;
 use crate::layers::maxpool::MaxPool2d;
 use crate::layers::relu2d::Relu2dLayer;
 use crate::layers::sequential::Sequential;
+use crate::layers::softmax::Softmax;
 use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
 use crate::optimizers::OptimizerFactory;
@@ -89,7 +90,8 @@ pub struct MyCnn2<
     >,
     s2: Sequential<100, 50, Sigmoid, OPT>,
     s3: Sequential<50, 20, Sigmoid, OPT>,
-    s4: Sequential<20, DIGITS, Softmax, OPT>,
+    s4: Sequential<20, DIGITS, NoActivation, OPT>,
+    softmax: Softmax<DIGITS>,
 }
 
 impl<OPT> NeuralNetwork<DIGITS> for MyCnn2<OPT>
@@ -124,6 +126,8 @@ where
         let s3 = Sequential::new();
         let s4 = Sequential::new();
 
+        let softmax = Softmax::new();
+
         Self {
             conv1,
             relu1,
@@ -135,6 +139,7 @@ where
             s2,
             s3,
             s4,
+            softmax,
         }
     }
 
@@ -153,6 +158,7 @@ where
         let x = self.s2.ff(x);
         let x = self.s3.ff(x);
         let x = self.s4.ff(x);
+        let x = self.softmax.ff(x);
         x
     }
 
@@ -162,6 +168,7 @@ where
         y_test: SVector<f64, DIGITS>,
     ) {
         let g = CrossEntropy::grad(y_out, y_test);
+        let g = self.softmax.bp(g);
         let g = self.s4.bp(g);
         let g = self.s3.bp(g);
         let g = self.s2.bp(g);

@@ -12,6 +12,7 @@ use rayon::ThreadPoolBuilder;
 use crate::models::cnn::MyCnn;
 use crate::models::cnn::DIGITS;
 use crate::models::cnn::MNIST_IMAGE_DIM;
+use crate::models::cnn2::MyCnn2;
 use crate::models::NNClassifierModel;
 use crate::optimizers::adam::AdamFactory;
 use crate::runners::write_costs_to_file;
@@ -141,6 +142,7 @@ pub fn train_and_validate_mnist_cnn() {
                 let (tx, rx) = mpsc::channel();
                 let mut model =
                     NNClassifierModel::<
+                        /*
                         MyCnn<
                             //SgdWMomentumFactory<1, 100, 5, 10>,
                             //SgdFactory<1, 10>,
@@ -155,7 +157,7 @@ pub fn train_and_validate_mnist_cnn() {
                                 100,
                             >,
                         >,
-                        /*
+                        */
                         MyCnn2<
                             //SgdWMomentumFactory<1, 100, 5, 10>,
                             //SgdFactory<1, 10>,
@@ -170,7 +172,6 @@ pub fn train_and_validate_mnist_cnn() {
                                 100,
                             >,
                         >,
-                        */
                         10,
                     >::new(Some(tx));
                 let dbg_thread =

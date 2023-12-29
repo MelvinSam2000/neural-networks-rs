@@ -4,6 +4,8 @@ use nalgebra::SMatrix;
 use nalgebra::SVector;
 use rand::Rng;
 
+use crate::activation::deriv_all;
+use crate::activation::func_all;
 use crate::activation::ActivationFunction;
 use crate::optimizers::Optimizer;
 use crate::optimizers::OptimizerFactory;
@@ -26,7 +28,7 @@ pub struct Sequential<
 impl<const L1: usize, const L2: usize, F, O>
     Sequential<L1, L2, F, O>
 where
-    F: ActivationFunction<L2>,
+    F: ActivationFunction,
     O: OptimizerFactory<L2, L1> + OptimizerFactory<L2, 1>,
 {
     pub fn new() -> Self {
@@ -69,7 +71,7 @@ where
     ) -> SVector<f64, L2> {
         self.a = a;
         self.z = self.w * self.a + self.b;
-        F::func(&self.z)
+        func_all::<L2, 1, F>(&self.z)
     }
 
     // backprop
@@ -77,7 +79,8 @@ where
         &mut self,
         mut g: SVector<f64, L2>,
     ) -> SVector<f64, L1> {
-        g = F::grad(&self.z) * g;
+        g = deriv_all::<L2, 1, F>(&self.z)
+            .component_mul(&g);
         let dzdw = &g * self.a.transpose();
         let dzda = self.w.transpose();
         self.optw.update_param(&mut self.w, &dzdw);

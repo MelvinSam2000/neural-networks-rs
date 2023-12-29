@@ -1,11 +1,10 @@
 use nalgebra::SMatrix;
 use rand_distr::num_traits::Zero;
 
-use crate::activation::softmax::Softmax;
-use crate::layers::actlayer::ActivationLayer;
+use super::softmax::Softmax;
 
 pub struct Softmax2d<const R: usize, const C: usize> {
-    softmaxs: [ActivationLayer<C, Softmax>; R],
+    softmaxs: [Softmax<C>; R],
 }
 
 impl<const R: usize, const C: usize> Softmax2d<R, C> {

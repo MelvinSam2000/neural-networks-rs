@@ -4,6 +4,8 @@ use nalgebra::SMatrix;
 use nalgebra::SVector;
 use rand::Rng;
 
+use crate::activation::deriv_all;
+use crate::activation::func_all;
 use crate::activation::ActivationFunction;
 
 pub struct RnnCell<
@@ -32,7 +34,7 @@ impl<
         F,
     > RnnCell<X, Y, H, T, F>
 where
-    F: ActivationFunction<H>,
+    F: ActivationFunction,
 {
     pub fn new(learn_rate: f64) -> Self {
         let x = [SVector::zeros(); T];
@@ -91,7 +93,7 @@ where
                 } else {
                     SVector::zeros()
                 };
-            self.h[t] = F::func(&self.z[t]);
+            self.h[t] = func_all::<H, 1, F>(&self.z[t]);
             self.y[t] = self.wy * self.h[t];
         }
         self.y.clone()
@@ -117,8 +119,10 @@ where
         let mut g = SVector::zeros();
         let mut gout = [SVector::zeros(); T];
         for t in (0..T).rev() {
-            let g_tmp = F::grad(&self.z[t])
-                * (wy_old.transpose() * gl[t] + &g);
+            let g_tmp = deriv_all::<H, 1, F>(&self.z[t])
+                .component_mul(
+                    &(wy_old.transpose() * gl[t] + &g),
+                );
             self.wx -= self.learn_rate
                 * g_tmp
                 * self.x[t].transpose();

@@ -3,8 +3,10 @@ use std::marker::PhantomData;
 use nalgebra::SVector;
 
 use super::NeuralNetwork;
+use crate::activation::noact::NoActivation;
 use crate::activation::ActivationFunction;
 use crate::layers::sequential::Sequential;
+use crate::layers::softmax::Softmax;
 use crate::loss::LossFunction;
 use crate::optimizers::OptimizerFactory;
 
@@ -15,7 +17,6 @@ pub struct Ann4<
     const L4: usize,
     F1,
     F2,
-    F3,
     LOSS,
     OPT: OptimizerFactory<L2, L1>
         + OptimizerFactory<L2, 1>
@@ -26,7 +27,8 @@ pub struct Ann4<
 > {
     s1: Sequential<L1, L2, F1, OPT>,
     s2: Sequential<L2, L3, F2, OPT>,
-    s3: Sequential<L3, L4, F3, OPT>,
+    s3: Sequential<L3, L4, NoActivation, OPT>,
+    softmax: Softmax<L4>,
     loss: PhantomData<LOSS>,
 }
 
@@ -37,15 +39,13 @@ impl<
         const L4: usize,
         F1,
         F2,
-        F3,
         LOSS,
         OPT,
     > NeuralNetwork<L4>
-    for Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS, OPT>
+    for Ann4<L1, L2, L3, L4, F1, F2, LOSS, OPT>
 where
-    F1: ActivationFunction<L2>,
-    F2: ActivationFunction<L3>,
-    F3: ActivationFunction<L4>,
+    F1: ActivationFunction,
+    F2: ActivationFunction,
     LOSS: LossFunction<L4>,
     OPT: OptimizerFactory<L2, L1>
         + OptimizerFactory<L2, 1>
@@ -60,8 +60,15 @@ where
         let s1 = Sequential::new();
         let s2 = Sequential::new();
         let s3 = Sequential::new();
+        let softmax = Softmax::new();
         let loss = PhantomData;
-        Self { s1, s2, s3, loss }
+        Self {
+            s1,
+            s2,
+            s3,
+            softmax,
+            loss,
+        }
     }
 
     fn feedforward(
@@ -72,6 +79,7 @@ where
         let a = self.s1.ff(a);
         let a = self.s2.ff(a);
         let a = self.s3.ff(a);
+        let a = self.softmax.ff(a);
         a
     }
 
@@ -81,6 +89,7 @@ where
         y_test: SVector<f64, L4>,
     ) {
         let g = LOSS::grad(y_out, y_test);
+        let g = self.softmax.bp(g);
         let g = self.s3.bp(g);
         let g = self.s2.bp(g);
         self.s1.bp(g);
@@ -101,14 +110,12 @@ impl<
         const L4: usize,
         F1,
         F2,
-        F3,
         LOSS,
         OPT,
-    > Ann4<L1, L2, L3, L4, F1, F2, F3, LOSS, OPT>
+    > Ann4<L1, L2, L3, L4, F1, F2, LOSS, OPT>
 where
-    F1: ActivationFunction<L2>,
-    F2: ActivationFunction<L3>,
-    F3: ActivationFunction<L4>,
+    F1: ActivationFunction,
+    F2: ActivationFunction,
     LOSS: LossFunction<L4>,
     OPT: OptimizerFactory<L2, L1>
         + OptimizerFactory<L2, 1>

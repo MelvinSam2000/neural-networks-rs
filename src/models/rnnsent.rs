@@ -2,12 +2,13 @@ use nalgebra::SVector;
 use nalgebra::Vector1;
 
 use super::NeuralNetwork;
+use crate::activation::noact::NoActivation;
 use crate::activation::sigmoid::Sigmoid;
-use crate::activation::softmax::Softmax;
 use crate::activation::tanh::Tanh;
 use crate::layers::embedding::Embedding;
 use crate::layers::rnncell::RnnCell;
 use crate::layers::sequential::Sequential;
+use crate::layers::softmax::Softmax;
 use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
 use crate::optimizers::OptimizerFactory;
@@ -27,7 +28,8 @@ pub struct RnnSentimentAnalyzer<
     embedding: Embedding<N>,
     rnn: RnnCell<X, 1, H, N, Tanh>,
     s1: Sequential<N, 10, Sigmoid, O>,
-    s2: Sequential<10, Y, Softmax, O>,
+    s2: Sequential<10, Y, NoActivation, O>,
+    softmax: Softmax<Y>,
 }
 
 impl<const N: usize, const X: usize, const Y: usize, O>
@@ -45,11 +47,13 @@ where
         let rnn = RnnCell::new(0.1);
         let s1 = Sequential::new();
         let s2 = Sequential::new();
+        let softmax = Softmax::new();
         Self {
             embedding,
             rnn,
             s1,
             s2,
+            softmax,
         }
     }
 
@@ -62,6 +66,7 @@ where
         let x = flatten(x);
         let x = self.s1.ff(x);
         let x = self.s2.ff(x);
+        let x = self.softmax.ff(x);
         x
     }
 
@@ -71,6 +76,7 @@ where
         y_test: SVector<f64, Y>,
     ) {
         let g = CrossEntropy::grad(y_out, y_test);
+        let g = self.softmax.bp(g);
         let g = self.s2.bp(g);
         let g = self.s1.bp(g);
         let g = unflatten(g);

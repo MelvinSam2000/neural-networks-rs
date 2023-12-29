@@ -3,6 +3,8 @@ use std::marker::PhantomData;
 use nalgebra::SMatrix;
 use rand::Rng;
 
+use crate::activation::deriv_all;
+use crate::activation::func_all;
 use crate::activation::ActivationFunction;
 use crate::optimizers::Optimizer;
 use crate::optimizers::OptimizerFactory;
@@ -31,7 +33,7 @@ impl<
         O,
     > Dense2D<X, Y, N, F, O>
 where
-    F: ActivationFunction<Y>,
+    F: ActivationFunction,
     O: OptimizerFactory<Y, X> + OptimizerFactory<Y, N>,
 {
     pub fn new() -> Self {
@@ -76,8 +78,7 @@ where
     ) -> SMatrix<f64, Y, N> {
         self.x = x;
         self.z = self.w * self.x + self.b;
-        //F::func(&self.z)
-        todo!()
+        func_all::<Y, N, F>(&self.z)
     }
 
     // backprop
@@ -85,7 +86,7 @@ where
         &mut self,
         mut g: SMatrix<f64, Y, N>,
     ) -> SMatrix<f64, X, N> {
-        //g = F::grad(&self.z) * g;
+        g = deriv_all::<Y, N, F>(&self.z).component_mul(&g);
         let dw = &g * self.x.transpose();
         let db = &g;
         let dx = self.w.transpose() * g;
