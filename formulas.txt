@@ -1,20 +1,18 @@
 
 ANN:
 
-// N is 1 for 1d dense, >1 for 2d dense
-
-func ff(X: Matrix<X, N>) -> Matrix<Y, N> {
-    Z = WX + B
-    ret s(Z)
+func ff(x: Vec<X>) -> Vec<Y> {
+    z = Wx + b
+    ret s(z)
 }
 
-func bp(G: Matrix<Y, N>) -> Matrix<X, N> {
-    G = s'(Z) (*) G      // elementwise product
-    dW = G * W^t
-    dB = G
-    out = W^t * G
+func bp(g: Vec<Y>) -> Vec<X> {
+    g = s'(z) (*) g      // elementwise product
+    dW = g * x^t
+    db = g
+    out = W^t * g
     update_param(&W, dW)
-    update_param(&B, dB)
+    update_param(&b, db)
     ret out
 }
 

@@ -39,7 +39,7 @@ fn test_tokenizer() {
     let tk =
         nlp::Tokenizer::new("tokenizer/en_tokenizer.bin")
             .unwrap();
-    tk.pipe("Hello! I like  2 apples")
+    tk.pipe("eating sleeping dreaming food guitar apple")
         .flat_map(|s| {
             s.tokens().iter().cloned().collect::<Vec<_>>()
         })

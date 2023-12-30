@@ -1,7 +1,7 @@
 pub mod actlayer;
 pub mod attention;
 pub mod conv;
-pub mod embedding;
+//pub mod embedding;
 pub mod maxpool;
 pub mod relu2d;
 pub mod rnncell;
@@ -9,4 +9,5 @@ pub mod seq2d;
 pub mod sequential;
 pub mod softmax;
 pub mod softmax2d;
-pub mod tokenizer;
+//pub mod tokenizer;
+pub mod randembedding;

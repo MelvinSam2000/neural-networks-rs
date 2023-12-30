@@ -1,3 +1,4 @@
+use nalgebra::SMatrix;
 use nalgebra::SVector;
 use nalgebra::Vector1;
 
@@ -5,7 +6,7 @@ use super::NeuralNetwork;
 use crate::activation::noact::NoActivation;
 use crate::activation::sigmoid::Sigmoid;
 use crate::activation::tanh::Tanh;
-use crate::layers::embedding::Embedding;
+use crate::layers::randembedding::RandEmbedding;
 use crate::layers::rnncell::RnnCell;
 use crate::layers::sequential::Sequential;
 use crate::layers::softmax::Softmax;
@@ -26,7 +27,7 @@ pub struct RnnSentimentAnalyzer<
         + OptimizerFactory<Y, 10>
         + OptimizerFactory<Y, 1>,
 > {
-    embedding: Embedding<N>,
+    embedding: RandEmbedding<N, X>,
     rnn: RnnCell<
         X,
         1,
@@ -51,7 +52,7 @@ where
     type ModelInput = String;
 
     fn new() -> Self {
-        let embedding = Embedding::new("TODO");
+        let embedding = RandEmbedding::default();
         let rnn = RnnCell::new();
         let s1 = Sequential::new();
         let s2 = Sequential::new();
@@ -69,7 +70,8 @@ where
         &mut self,
         x: Self::ModelInput,
     ) -> SVector<f32, Y> {
-        let x = self.embedding.embed(&x);
+        let x = self.embedding.embed(x);
+        let x = mat_to_array(x);
         let x = self.rnn.ff(x);
         let x = flatten(x);
         let x = self.s1.ff(x);
@@ -116,5 +118,15 @@ fn unflatten<const T: usize>(
     for t in 0..T {
         out[t] = Vector1::new(v[t]);
     }
+    out
+}
+
+fn mat_to_array<const N: usize, const X: usize>(
+    m: SMatrix<f32, N, X>,
+) -> [SVector<f32, X>; N] {
+    let mut out = [SVector::zeros(); N];
+    m.row_iter().enumerate().for_each(|(i, row)| {
+        out[i] = row.transpose();
+    });
     out
 }
