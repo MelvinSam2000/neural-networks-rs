@@ -21,6 +21,9 @@ impl<const N: usize, const M: usize> RandEmbedding<N, M> {
         });
         let mut out: SMatrix<f32, N, M> = SMatrix::zeros();
         for (i, word) in sentence.split(' ').enumerate() {
+            if i >= N {
+                break;
+            }
             let v = self
                 .map
                 .entry(word.to_string())

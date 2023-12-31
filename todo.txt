@@ -1,6 +1,5 @@
 General:
-[x] Modify activation trait
-[x] Change everything to f32
+[ ] Start using Pytorch
 
 CNN
 [ ] Code a wasm UI to test the model
@@ -13,8 +12,10 @@ CNN
 RNN
 [x] Embedding and tokenizer finish for RNN
 [x] Set optimizer for RNN
-[ ] Set sentiment analysis dataset preprocessing
-[ ] Build LSTM or GRU layer
+[x] Set sentiment analysis dataset preprocessing
+[x] Test RNN (performs poorly)
+[ ] Make RNN have good score
 [ ] Test Attention layer 
 [ ] Build Multihead attention 
 [ ] Build transformer 
+[ ] Build LSTM or GRU layer

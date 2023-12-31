@@ -6,6 +6,7 @@ use csv::ReaderBuilder;
 
 pub mod annrun;
 pub mod cnnrun;
+pub mod rnnrun;
 
 fn write_costs_to_file(file: &str, recv: Receiver<f32>) {
     let mut costs = vec![];

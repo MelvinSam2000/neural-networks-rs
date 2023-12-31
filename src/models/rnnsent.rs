@@ -22,9 +22,9 @@ pub struct RnnSentimentAnalyzer<
     const N: usize,
     const X: usize,
     const Y: usize,
-    O: OptimizerFactory<10, N>
-        + OptimizerFactory<10, 1>
-        + OptimizerFactory<Y, 10>
+    O: OptimizerFactory<100, N>
+        + OptimizerFactory<100, 1>
+        + OptimizerFactory<Y, 100>
         + OptimizerFactory<Y, 1>,
 > {
     embedding: RandEmbedding<N, X>,
@@ -36,17 +36,17 @@ pub struct RnnSentimentAnalyzer<
         Tanh,
         AdamFactory<1, 100, 9, 10, 9, 10>,
     >,
-    s1: Sequential<N, 10, Sigmoid, O>,
-    s2: Sequential<10, Y, NoActivation, O>,
+    s1: Sequential<N, 100, Sigmoid, O>,
+    s2: Sequential<100, Y, NoActivation, O>,
     softmax: Softmax<Y>,
 }
 
 impl<const N: usize, const X: usize, const Y: usize, O>
     NeuralNetwork<Y> for RnnSentimentAnalyzer<N, X, Y, O>
 where
-    O: OptimizerFactory<10, N>
-        + OptimizerFactory<10, 1>
-        + OptimizerFactory<Y, 10>
+    O: OptimizerFactory<100, N>
+        + OptimizerFactory<100, 1>
+        + OptimizerFactory<Y, 100>
         + OptimizerFactory<Y, 1>,
 {
     type ModelInput = String;

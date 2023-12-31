@@ -35,7 +35,6 @@ impl<T, const Y: usize> NNClassifierModel<T, Y>
 where
     T: NeuralNetwork<Y>,
     T::ModelInput: Clone,
-    T::ModelInput: Copy,
 {
     pub fn new(debug_channel: Option<Sender<f32>>) -> Self {
         let model = T::new();
@@ -61,9 +60,17 @@ where
         const M: usize = 400;
         let k = n / M;
         for i in 0..n {
-            let x = x_train[i];
+            let x = x_train[i].clone();
             let y = y_train[i];
             let y_out = self.model.feedforward(x);
+
+            /*
+            let cost = T::loss(&y_out, &y);
+            if cost.is_nan() {
+                println!("NAN AT {i}");
+                return;
+            }
+            */
 
             if let Some(channel) =
                 self.debug_channel.as_ref()
@@ -111,7 +118,9 @@ where
         let n = x_test.len();
         let count: f32 = (0..n)
             .map(|i| {
-                if self.predict(x_test[i]) == y_test[i] {
+                if self.predict(x_test[i].clone())
+                    == y_test[i]
+                {
                     1.
                 } else {
                     0.

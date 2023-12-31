@@ -2,6 +2,7 @@
 
 use runners::annrun::train_and_validate_csv_ann;
 use runners::cnnrun::train_and_validate_mnist_cnn;
+use runners::rnnrun::train_and_validate_imdb_rnn;
 
 pub mod activation;
 pub mod dataset;
@@ -19,6 +20,7 @@ fn main() {
     match cmd.as_str() {
         "ann" => train_and_validate_csv_ann(),
         "cnn" => train_and_validate_mnist_cnn(),
+        "rnn" => train_and_validate_imdb_rnn(),
         _ => eprintln!("Invalid cmd provided"),
     };
 }

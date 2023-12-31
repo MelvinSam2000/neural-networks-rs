@@ -110,12 +110,10 @@ where
     ) -> [SVector<f32, Y>; T] {
         self.x = x;
         for t in 0..T {
-            self.z[t] = self.wx * self.x[t]
-                + if t != 0 {
-                    self.wh[t] * self.h[t - 1]
-                } else {
-                    SVector::zeros()
-                };
+            self.z[t] = self.wx * self.x[t];
+            if t != 0 {
+                self.z[t] += self.wh * self.h[t - 1]
+            }
             self.h[t] = func_all::<H, 1, F>(&self.z[t]);
             self.y[t] = self.wy * self.h[t];
         }
