@@ -10,12 +10,11 @@ CNN
 [ ] Build on GPU
 
 RNN
-[x] Embedding and tokenizer finish for RNN
-[x] Set optimizer for RNN
-[x] Set sentiment analysis dataset preprocessing
 [x] Test RNN (performs poorly)
+[ ] Build proper tokenizer and embedding
 [ ] Make RNN have good score
-[ ] Test Attention layer 
+[x] Test Attention layer 
 [ ] Build Multihead attention 
-[ ] Build transformer 
-[ ] Build LSTM or GRU layer
+[x] Build transformer 
+[x] Build positional encoder
+[ ] Build LSTM layer

@@ -3,20 +3,25 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::sync::mpsc;
 
+use nalgebra::SMatrix;
 use nalgebra::SVector;
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 use rayon::ThreadPoolBuilder;
 use regex::Regex;
 
-use crate::models::rnnsent::RnnSentimentAnalyzer;
+use crate::layers::randembedding::RandEmbedding;
+use crate::models::transformer1::Transformer1;
 use crate::models::NNClassifierModel;
 use crate::optimizers::adam::AdamFactory;
 use crate::runners::write_costs_to_file;
 
+const N: usize = 100;
+const M: usize = 5;
+
 pub fn train_and_validate_imdb_rnn() {
     let pool = ThreadPoolBuilder::new()
-        .stack_size(64 * 1024 * 1024)
+        .stack_size(1024 * 1024 * 1024)
         .build()
         .unwrap();
 
@@ -40,10 +45,22 @@ pub fn train_and_validate_imdb_rnn() {
                 let (tx, rx) = mpsc::channel();
                 let mut model =
                     NNClassifierModel::<
+                        /*
                         RnnSentimentAnalyzer<
                             300,
                             300,
                             2,
+                            AdamFactory<
+                                1,
+                                100,
+                                95,
+                                100,
+                                95,
+                                100,
+                            >,
+                        >,
+                        */
+                        Transformer1<
                             AdamFactory<
                                 1,
                                 100,
@@ -85,9 +102,9 @@ fn get_data_csv(
     file_path: &str,
     train_test_ratio: f32,
 ) -> anyhow::Result<(
-    Vec<String>,
+    Vec<SMatrix<f32, N, M>>,
     Vec<SVector<f32, 2>>,
-    Vec<String>,
+    Vec<SMatrix<f32, N, M>>,
     Vec<SVector<f32, 2>>,
 )> {
     let file = File::open(file_path)?;
@@ -100,10 +117,12 @@ fn get_data_csv(
     let train_limit =
         (fileiter.len() as f32 * train_test_ratio) as usize;
 
-    let mut x_train = Vec::<String>::new();
+    let mut x_train = Vec::new();
     let mut y_train = Vec::<SVector<f32, 2>>::new();
-    let mut x_test = Vec::<String>::new();
+    let mut x_test = Vec::new();
     let mut y_test = Vec::<SVector<f32, 2>>::new();
+
+    let mut embed = RandEmbedding::default();
 
     let re = Regex::new(r#"^"?(.*)"?,(\w+)"#).unwrap();
 
@@ -139,7 +158,8 @@ fn get_data_csv(
                     sentiment
                 ),
             };
-            x.push(text);
+            let v = embed.embed(text);
+            x.push(v);
             y.push(sentiment);
         },
     );

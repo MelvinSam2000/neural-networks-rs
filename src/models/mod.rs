@@ -7,6 +7,7 @@ pub mod cnn;
 pub mod cnn2;
 pub mod cnn3;
 pub mod rnnsent;
+pub mod transformer1;
 
 pub trait NeuralNetwork<const Y: usize> {
     type ModelInput;

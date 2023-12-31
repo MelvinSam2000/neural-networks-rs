@@ -1,6 +1,7 @@
 use nalgebra::SMatrix;
 use nalgebra::SVector;
 
+#[derive(Clone, Copy)]
 pub struct Softmax<const N: usize> {
     s: SVector<f32, N>,
 }

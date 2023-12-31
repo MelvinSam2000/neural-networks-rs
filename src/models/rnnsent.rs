@@ -6,7 +6,6 @@ use super::NeuralNetwork;
 use crate::activation::noact::NoActivation;
 use crate::activation::sigmoid::Sigmoid;
 use crate::activation::tanh::Tanh;
-use crate::layers::randembedding::RandEmbedding;
 use crate::layers::rnncell::RnnCell;
 use crate::layers::sequential::Sequential;
 use crate::layers::softmax::Softmax;
@@ -27,7 +26,6 @@ pub struct RnnSentimentAnalyzer<
         + OptimizerFactory<Y, 100>
         + OptimizerFactory<Y, 1>,
 > {
-    embedding: RandEmbedding<N, X>,
     rnn: RnnCell<
         X,
         1,
@@ -49,16 +47,14 @@ where
         + OptimizerFactory<Y, 100>
         + OptimizerFactory<Y, 1>,
 {
-    type ModelInput = String;
+    type ModelInput = SMatrix<f32, N, X>;
 
     fn new() -> Self {
-        let embedding = RandEmbedding::default();
         let rnn = RnnCell::new();
         let s1 = Sequential::new();
         let s2 = Sequential::new();
         let softmax = Softmax::new();
         Self {
-            embedding,
             rnn,
             s1,
             s2,
@@ -70,7 +66,6 @@ where
         &mut self,
         x: Self::ModelInput,
     ) -> SVector<f32, Y> {
-        let x = self.embedding.embed(x);
         let x = mat_to_array(x);
         let x = self.rnn.ff(x);
         let x = flatten(x);

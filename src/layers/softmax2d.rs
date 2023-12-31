@@ -9,7 +9,8 @@ pub struct Softmax2d<const R: usize, const C: usize> {
 
 impl<const R: usize, const C: usize> Softmax2d<R, C> {
     pub fn new() -> Self {
-        todo!()
+        let softmaxs = [Softmax::new(); R];
+        Self { softmaxs }
     }
 
     // feedforward
