@@ -11,12 +11,12 @@ use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
 use crate::optimizers::OptimizerFactory;
 
-const N: usize = 100;
-const M: usize = 5;
+const N: usize = 50;
+const M: usize = 200;
 const Y: usize = 2;
 const D: usize = 10;
 const NM: usize = N * M;
-const T: usize = 3;
+const T: usize = 2;
 const L1: usize = 100;
 const L2: usize = 50;
 const L3: usize = 10;
@@ -68,14 +68,14 @@ where
         let attention = [
             Attention::new(),
             Attention::new(),
-            Attention::new(),
+            //Attention::new(),
         ];
 
         #[rustfmt::skip]
         let seq = [
             Sequential::new(),
             Sequential::new(),
-            Sequential::new(),
+            //Sequential::new(),
         ];
 
         let seqf1 = Sequential::new();

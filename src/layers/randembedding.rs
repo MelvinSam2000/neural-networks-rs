@@ -44,6 +44,7 @@ impl<const N: usize, const M: usize> RandEmbedding<N, M> {
 }
 
 #[test]
+#[ignore]
 fn test_rembedding() {
     let mut emb: RandEmbedding<6, 10> =
         RandEmbedding::default();

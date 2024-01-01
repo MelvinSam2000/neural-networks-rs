@@ -10,18 +10,20 @@ use rayon::iter::ParallelIterator;
 use rayon::ThreadPoolBuilder;
 use regex::Regex;
 
+use crate::layers::embedding::Embedding;
 use crate::layers::randembedding::RandEmbedding;
+use crate::models::rnnsent::RnnSentimentAnalyzer;
 use crate::models::transformer1::Transformer1;
 use crate::models::NNClassifierModel;
 use crate::optimizers::adam::AdamFactory;
 use crate::runners::write_costs_to_file;
 
-const N: usize = 100;
-const M: usize = 5;
+const N: usize = 50;
+const M: usize = 200;
 
 pub fn train_and_validate_imdb_rnn() {
     let pool = ThreadPoolBuilder::new()
-        .stack_size(1024 * 1024 * 1024)
+        .stack_size(4 * 1024 * 1024 * 1024)
         .build()
         .unwrap();
 
@@ -43,23 +45,23 @@ pub fn train_and_validate_imdb_rnn() {
             .into_par_iter()
             .map(|i| {
                 let (tx, rx) = mpsc::channel();
+                //println!("@@@@Creating model");
                 let mut model =
                     NNClassifierModel::<
-                        /*
                         RnnSentimentAnalyzer<
-                            300,
-                            300,
+                            N,
+                            M,
                             2,
                             AdamFactory<
                                 1,
-                                100,
+                                10000,
                                 95,
                                 100,
                                 95,
                                 100,
                             >,
                         >,
-                        */
+                        /*
                         Transformer1<
                             AdamFactory<
                                 1,
@@ -70,8 +72,10 @@ pub fn train_and_validate_imdb_rnn() {
                                 100,
                             >,
                         >,
+                        */
                         2,
                     >::new(Some(tx));
+                //println!("@@@@ Model created");
                 let dbg_thread =
                     std::thread::spawn(move || {
                         write_costs_to_file(
@@ -80,6 +84,7 @@ pub fn train_and_validate_imdb_rnn() {
                         );
                     });
 
+                //println!("@@@@Training started");
                 model.train(&x_train, &y_train);
                 println!("");
                 (
@@ -113,6 +118,7 @@ fn get_data_csv(
         .lines()
         .skip(1)
         .map(|line| line.unwrap())
+        .take(20000)
         .collect::<Vec<String>>();
     let train_limit =
         (fileiter.len() as f32 * train_test_ratio) as usize;
@@ -122,7 +128,7 @@ fn get_data_csv(
     let mut x_test = Vec::new();
     let mut y_test = Vec::<SVector<f32, 2>>::new();
 
-    let mut embed = RandEmbedding::default();
+    let mut embed = Embedding::new("embedding/model.bin");
 
     let re = Regex::new(r#"^"?(.*)"?,(\w+)"#).unwrap();
 
@@ -133,6 +139,7 @@ fn get_data_csv(
             } else {
                 (&mut x_test, &mut y_test)
             };
+            print!("\rTraining {i}");
             let text = re
                 .captures(&line)
                 .expect(&format!("Failed parsing at {i}"))

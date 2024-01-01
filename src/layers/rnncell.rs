@@ -123,40 +123,30 @@ where
     // backprop
     pub fn bp(
         &mut self,
-        gl: [SVector<f32, Y>; T],
+        gy: [SVector<f32, Y>; T],
     ) -> [SVector<f32, X>; T] {
-        let wx_old = self.wx.clone();
-        let wy_old = self.wy.clone();
-        let wh_old = self.wh.clone();
-
-        // update Wy
-        let mut dwy = SMatrix::zeros();
-        for t in 0..T {
-            dwy += gl[t] * self.h[t].transpose();
-        }
-
-        // update Wx and Wh
-        let mut g = SVector::zeros();
-        let mut gout = [SVector::zeros(); T];
+        let mut gh = SVector::zeros();
+        let mut gx = [SVector::zeros(); T];
         let mut dwx = SMatrix::zeros();
+        let mut dwy = SMatrix::zeros();
         let mut dwh = SMatrix::zeros();
         for t in (0..T).rev() {
-            let g_tmp = deriv_all::<H, 1, F>(&self.z[t])
-                .component_mul(
-                    &(wy_old.transpose() * gl[t] + &g),
-                );
-            dwx += g_tmp * self.x[t].transpose();
+            dwy += gy[t] * self.h[t].transpose();
+            let g = self.wy.transpose() * gy[t] + &gh;
+            let g = deriv_all::<H, 1, F>(&self.z[t])
+                .component_mul(&g);
+            dwx += g * self.x[t].transpose();
             if t != 0 {
-                dwh += g_tmp * self.h[t - 1].transpose();
+                dwh += g * self.h[t - 1].transpose();
             }
-            gout[t] = wx_old.transpose() * g_tmp;
-            g += wh_old.transpose() * g_tmp;
+            gx[t] = self.wx.transpose() * g;
+            gh = self.wh.transpose() * g;
         }
 
         self.optwx.update_param(&mut self.wx, &dwx);
         self.optwh.update_param(&mut self.wh, &dwh);
         self.optwy.update_param(&mut self.wy, &dwy);
 
-        gout
+        gx
     }
 }
