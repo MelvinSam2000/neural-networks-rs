@@ -4,17 +4,12 @@ General:
 CNN
 [ ] Code a wasm UI to test the model
 [ ] Export model parameters
-[x] Test nested conv layers
-[x] Create CNN model with dense2d
-[x] Test dense2d and compare results (bad score around 50%)
 [ ] Build on GPU
 
 RNN
-[x] Test RNN (performs poorly)
-[ ] Build proper tokenizer and embedding
 [ ] Make RNN have good score
-[x] Test Attention layer 
+[ ] Make Transformer have good score
 [ ] Build Multihead attention 
-[x] Build transformer 
-[x] Build positional encoder
-[ ] Build LSTM layer
+[x] Build LSTM layer
+[ ] Build LSTM model 
+[ ] Try using transformer with Boxed Matrices

@@ -11,7 +11,6 @@ use rayon::ThreadPoolBuilder;
 use regex::Regex;
 
 use crate::layers::embedding::Embedding;
-use crate::layers::randembedding::RandEmbedding;
 use crate::models::rnnsent::RnnSentimentAnalyzer;
 use crate::models::transformer1::Transformer1;
 use crate::models::NNClassifierModel;
