@@ -2,10 +2,12 @@ use std::sync::mpsc::Sender;
 
 use nalgebra::SVector;
 
+pub mod ann;
 pub mod ann4;
 pub mod cnn;
 pub mod cnn2;
 pub mod cnn3;
+pub mod lstmsent;
 pub mod rnnsent;
 pub mod transformer1;
 
@@ -36,6 +38,7 @@ impl<T, const Y: usize> NNClassifierModel<T, Y>
 where
     T: NeuralNetwork<Y>,
     T::ModelInput: Clone,
+    T::ModelInput: Copy,
 {
     pub fn new(debug_channel: Option<Sender<f32>>) -> Self {
         let model = T::new();
@@ -61,12 +64,13 @@ where
         const M: usize = 400;
         let k = n / M;
         for i in 0..n {
-            let x = x_train[i].clone();
+            let x = x_train[i];
             let y = y_train[i];
             let y_out = self.model.feedforward(x);
 
             /*
             let cost = T::loss(&y_out, &y);
+            println!("Training {i}");
             if cost.is_nan() {
                 println!("NAN AT {i}");
                 return;

@@ -11,6 +11,7 @@ use rayon::ThreadPoolBuilder;
 use regex::Regex;
 
 use crate::layers::embedding::Embedding;
+use crate::models::lstmsent::LstmSentAnalyzer;
 use crate::models::rnnsent::RnnSentimentAnalyzer;
 use crate::models::transformer1::Transformer1;
 use crate::models::NNClassifierModel;
@@ -40,13 +41,13 @@ pub fn train_and_validate_imdb_rnn() {
     println!("Data preprocessing DONE");
 
     pool.install(|| {
-        (0..6)
+        (0..3)
             .into_par_iter()
             .map(|i| {
                 let (tx, rx) = mpsc::channel();
-                //println!("@@@@Creating model");
                 let mut model =
                     NNClassifierModel::<
+                        /*
                         RnnSentimentAnalyzer<
                             N,
                             M,
@@ -54,6 +55,18 @@ pub fn train_and_validate_imdb_rnn() {
                             AdamFactory<
                                 1,
                                 10000,
+                                95,
+                                100,
+                                95,
+                                100,
+                            >,
+                        >,
+                        */
+                        LstmSentAnalyzer<
+                            //SgdFactory<1, 1000>, /*
+                            AdamFactory<
+                                1,
+                                1000,
                                 95,
                                 100,
                                 95,
@@ -74,7 +87,6 @@ pub fn train_and_validate_imdb_rnn() {
                         */
                         2,
                     >::new(Some(tx));
-                //println!("@@@@ Model created");
                 let dbg_thread =
                     std::thread::spawn(move || {
                         write_costs_to_file(
@@ -82,8 +94,6 @@ pub fn train_and_validate_imdb_rnn() {
                             rx,
                         );
                     });
-
-                //println!("@@@@Training started");
                 model.train(&x_train, &y_train);
                 println!("");
                 (

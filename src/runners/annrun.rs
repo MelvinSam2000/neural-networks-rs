@@ -8,6 +8,7 @@ use crate::activation::ActivationFunction;
 use crate::dataset::get_data_csv;
 use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
+use crate::models::ann::Ann;
 use crate::models::ann4::Ann4;
 use crate::models::NNClassifierModel;
 use crate::optimizers::adam::AdamFactory;
@@ -25,6 +26,8 @@ fn train_and_validate<
     F2: ActivationFunction,
     LOSS: LossFunction<L4>,
     OPT: OptimizerFactory<L2, L1>
+        + OptimizerFactory<L2, L2>
+        + OptimizerFactory<L4, L2>
         + OptimizerFactory<L2, 1>
         + OptimizerFactory<L3, L2>
         + OptimizerFactory<L3, 1>
@@ -61,7 +64,8 @@ fn train_and_validate<
         OPT,
     >::preprocess(&x_test, &y_test);
     let mut model = NNClassifierModel::<
-        Ann4<L1, L2, L3, L4, F1, F2, LOSS, OPT>,
+        //Ann4<L1, L2, L3, L4, F1, F2, LOSS, OPT>,
+        Ann<L1, L4, L2, 5, F1, LOSS, OPT>,
         L4,
     >::new(debug_channel);
     model.train(&x_train, &y_train);
@@ -81,7 +85,7 @@ pub fn train_and_validate_csv_ann() {
             let (tx, rx) = mpsc::channel();
             train_and_validate::<
                 2,
-                4,
+                10,
                 6,
                 3,
                 Relu,
@@ -89,7 +93,7 @@ pub fn train_and_validate_csv_ann() {
                 CrossEntropy,
                 //SgdFactory<8, 10>,
                 //RmsPropFactory<8, 10, 9, 10>,
-                AdamFactory<8, 10, 9, 10, 9, 10>,
+                AdamFactory<1, 100, 9, 10, 9, 10>,
             >("data/knn.csv", Some(tx));
             write_costs_to_file("knn.csv", rx);
         },

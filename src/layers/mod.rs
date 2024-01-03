@@ -10,6 +10,7 @@ pub mod sequential;
 pub mod softmax;
 pub mod softmax2d;
 //pub mod tokenizer;
+pub mod dense;
 pub mod lstm;
 pub mod posencoder;
 pub mod randembedding;
