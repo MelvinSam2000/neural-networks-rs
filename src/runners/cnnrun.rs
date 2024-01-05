@@ -148,7 +148,7 @@ pub fn train_and_validate_mnist_cnn() {
                             //AdagradFactory<1, 100>,
                             AdamFactory<
                                 1,
-                                1000,
+                                10000,
                                 95,
                                 100,
                                 95,

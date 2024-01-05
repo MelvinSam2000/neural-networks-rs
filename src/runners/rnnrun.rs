@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -45,25 +47,25 @@ pub fn train_and_validate_imdb_rnn() {
             .into_par_iter()
             .map(|i| {
                 let (tx, rx) = mpsc::channel();
+
                 let mut model =
                     NNClassifierModel::<
-                        /*
                         RnnSentimentAnalyzer<
                             N,
                             M,
                             2,
                             AdamFactory<
                                 1,
-                                10000,
+                                100,
                                 95,
                                 100,
                                 95,
                                 100,
                             >,
                         >,
-                        */
+                        /*
                         LstmSentAnalyzer<
-                            //SgdFactory<1, 1000>, /*
+                            //SgdFactory<1, 1000>,
                             AdamFactory<
                                 1,
                                 1000,
@@ -73,6 +75,7 @@ pub fn train_and_validate_imdb_rnn() {
                                 100,
                             >,
                         >,
+                        */
                         /*
                         Transformer1<
                             AdamFactory<

@@ -1,12 +1,10 @@
-use std::marker::PhantomData;
-
 use nalgebra::SMatrix;
 use nalgebra::SVector;
 use rand::Rng;
 
 use crate::activation::deriv_all;
 use crate::activation::func_all;
-use crate::activation::ActivationFunction;
+use crate::activation::tanh::Tanh;
 use crate::optimizers::Optimizer;
 use crate::optimizers::OptimizerFactory;
 
@@ -15,7 +13,6 @@ pub struct RnnCell<
     const Y: usize,
     const H: usize,
     const T: usize,
-    F,
     O: OptimizerFactory<H, X>
         + OptimizerFactory<H, H>
         + OptimizerFactory<Y, H>,
@@ -30,7 +27,6 @@ pub struct RnnCell<
     optwx: <O as OptimizerFactory<H, X>>::Optimizer,
     optwh: <O as OptimizerFactory<H, H>>::Optimizer,
     optwy: <O as OptimizerFactory<Y, H>>::Optimizer,
-    act: PhantomData<F>,
 }
 
 impl<
@@ -38,11 +34,9 @@ impl<
         const Y: usize,
         const H: usize,
         const T: usize,
-        F,
         O,
-    > RnnCell<X, Y, H, T, F, O>
+    > RnnCell<X, Y, H, T, O>
 where
-    F: ActivationFunction,
     O: OptimizerFactory<H, X>
         + OptimizerFactory<H, H>
         + OptimizerFactory<Y, H>,
@@ -76,8 +70,6 @@ where
             }
         }
 
-        let act = PhantomData;
-
         let optwx =
             <O as OptimizerFactory<H, X>>::Optimizer::init(
             );
@@ -99,7 +91,6 @@ where
             optwx,
             optwh,
             optwy,
-            act,
         }
     }
 
@@ -114,7 +105,7 @@ where
             if t != 0 {
                 self.z[t] += self.wh * self.h[t - 1]
             }
-            self.h[t] = func_all::<H, 1, F>(&self.z[t]);
+            self.h[t] = func_all::<H, 1, Tanh>(&self.z[t]);
             self.y[t] = self.wy * self.h[t];
         }
         self.y.clone()
@@ -133,7 +124,7 @@ where
         for t in (0..T).rev() {
             dwy += gy[t] * self.h[t].transpose();
             let g = self.wy.transpose() * gy[t] + &gh;
-            let g = deriv_all::<H, 1, F>(&self.z[t])
+            let g = deriv_all::<H, 1, Tanh>(&self.z[t])
                 .component_mul(&g);
             dwx += g * self.x[t].transpose();
             if t != 0 {

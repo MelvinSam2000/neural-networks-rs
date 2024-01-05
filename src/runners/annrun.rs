@@ -137,7 +137,7 @@ pub fn train_and_validate_csv_ann() {
                 12,
                 14,
                 2,
-                Sigmoid,
+                Relu,
                 Sigmoid,
                 CrossEntropy,
                 //SgdFactory<1, 2>,

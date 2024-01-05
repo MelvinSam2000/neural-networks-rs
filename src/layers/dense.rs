@@ -1,5 +1,6 @@
 use nalgebra::SVector;
 
+use super::layernorm::LayerNorm;
 use super::sequential::Sequential;
 use super::softmax::Softmax;
 use crate::activation::noact::NoActivation;
@@ -21,6 +22,7 @@ pub struct Dense<
     start_layer: Sequential<X, H, F, O>,
     mid_layers: Vec<Sequential<H, H, F, O>>,
     final_layer: Sequential<H, Y, NoActivation, O>,
+    layernorm: LayerNorm<Y, 1>,
     softmax: Softmax<Y>,
 }
 
@@ -46,11 +48,13 @@ where
             .map(|_| Sequential::new())
             .collect::<Vec<_>>();
         let final_layer = Sequential::new();
+        let layernorm = LayerNorm::new();
         let softmax = Softmax::new();
         Self {
             start_layer,
             mid_layers,
             final_layer,
+            layernorm,
             softmax,
         }
     }
@@ -64,6 +68,7 @@ where
             x = self.mid_layers[l].ff(x);
         }
         let x = self.final_layer.ff(x);
+        let x = self.layernorm.ff(x);
         let x = self.softmax.ff(x);
         x
     }
@@ -73,6 +78,7 @@ where
         g: SVector<f32, Y>,
     ) -> SVector<f32, X> {
         let g = self.softmax.bp(g);
+        let g = self.layernorm.bp(g);
         let mut g = self.final_layer.bp(g);
         for l in (0..L).rev() {
             g = self.mid_layers[l].bp(g);

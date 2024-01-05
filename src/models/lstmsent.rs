@@ -62,10 +62,10 @@ where
         y_test: SVector<f32, 2>,
     ) {
         let g = CrossEntropy::grad(y_out, y_test);
-        let g0 = self.dense.bp(g);
-        let mut g = [SMatrix::zeros(); N];
-        g[N - 1] = g0;
-        self.lstm.bp(g);
+        let g = self.dense.bp(g);
+        let mut garr = [SMatrix::zeros(); N];
+        garr[N - 1] = g;
+        self.lstm.bp(garr);
     }
 
     fn loss(

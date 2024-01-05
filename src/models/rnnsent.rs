@@ -1,65 +1,62 @@
 use nalgebra::SMatrix;
 use nalgebra::SVector;
-use nalgebra::Vector1;
 
 use super::NeuralNetwork;
-use crate::activation::noact::NoActivation;
 use crate::activation::sigmoid::Sigmoid;
-use crate::activation::tanh::Tanh;
+use crate::layers::dense::Dense;
 use crate::layers::rnncell::RnnCell;
-use crate::layers::sequential::Sequential;
-use crate::layers::softmax::Softmax;
 use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
 use crate::optimizers::adam::AdamFactory;
 use crate::optimizers::OptimizerFactory;
 
-const H: usize = 1;
+const H: usize = 100;
 
+pub const HIDDEN_LAYER_DIM: usize = 10;
+pub const HIDDEN_LAYER_NUM: usize = 1;
 // N is number of words, X is dim of word embedding, Y is sentiment dimensions
 pub struct RnnSentimentAnalyzer<
     const N: usize,
     const X: usize,
     const Y: usize,
-    O: OptimizerFactory<100, N>
-        + OptimizerFactory<100, 1>
-        + OptimizerFactory<Y, 100>
+    O: OptimizerFactory<HIDDEN_LAYER_DIM, H>
+        + OptimizerFactory<HIDDEN_LAYER_DIM, 1>
+        + OptimizerFactory<HIDDEN_LAYER_DIM, HIDDEN_LAYER_DIM>
+        + OptimizerFactory<Y, HIDDEN_LAYER_DIM>
         + OptimizerFactory<Y, 1>,
 > {
     rnn: RnnCell<
         X,
-        1,
+        H,
         H,
         N,
-        Tanh,
         AdamFactory<1, 100, 9, 10, 9, 10>,
     >,
-    s1: Sequential<N, 100, Sigmoid, O>,
-    s2: Sequential<100, Y, NoActivation, O>,
-    softmax: Softmax<Y>,
+    dense: Dense<
+        H,
+        Y,
+        HIDDEN_LAYER_DIM,
+        HIDDEN_LAYER_NUM,
+        Sigmoid,
+        O,
+    >,
 }
 
 impl<const N: usize, const X: usize, const Y: usize, O>
     NeuralNetwork<Y> for RnnSentimentAnalyzer<N, X, Y, O>
 where
-    O: OptimizerFactory<100, N>
-        + OptimizerFactory<100, 1>
-        + OptimizerFactory<Y, 100>
+    O: OptimizerFactory<HIDDEN_LAYER_DIM, H>
+        + OptimizerFactory<HIDDEN_LAYER_DIM, 1>
+        + OptimizerFactory<HIDDEN_LAYER_DIM, HIDDEN_LAYER_DIM>
+        + OptimizerFactory<Y, HIDDEN_LAYER_DIM>
         + OptimizerFactory<Y, 1>,
 {
     type ModelInput = SMatrix<f32, N, X>;
 
     fn new() -> Self {
         let rnn = RnnCell::new();
-        let s1 = Sequential::new();
-        let s2 = Sequential::new();
-        let softmax = Softmax::new();
-        Self {
-            rnn,
-            s1,
-            s2,
-            softmax,
-        }
+        let dense = Dense::new();
+        Self { rnn, dense }
     }
 
     fn feedforward(
@@ -68,10 +65,8 @@ where
     ) -> SVector<f32, Y> {
         let x = mat_to_array(x);
         let x = self.rnn.ff(x);
-        let x = flatten(x);
-        let x = self.s1.ff(x);
-        let x = self.s2.ff(x);
-        let x = self.softmax.ff(x);
+        let x = x[N - 1];
+        let x = self.dense.ff(x);
         x
     }
 
@@ -81,11 +76,10 @@ where
         y_test: SVector<f32, Y>,
     ) {
         let g = CrossEntropy::grad(y_out, y_test);
-        let g = self.softmax.bp(g);
-        let g = self.s2.bp(g);
-        let g = self.s1.bp(g);
-        let g = unflatten(g);
-        self.rnn.bp(g);
+        let g = self.dense.bp(g);
+        let mut garr = [SMatrix::zeros(); N];
+        garr[N - 1] = g;
+        self.rnn.bp(garr);
     }
 
     fn loss(
@@ -94,26 +88,6 @@ where
     ) -> f32 {
         CrossEntropy::func(y_out.clone(), y_test.clone())
     }
-}
-
-fn flatten<const T: usize>(
-    v: [SVector<f32, 1>; T],
-) -> SVector<f32, T> {
-    let mut out = SVector::zeros();
-    for t in 0..T {
-        out[t] = v[t][0];
-    }
-    out
-}
-
-fn unflatten<const T: usize>(
-    v: SVector<f32, T>,
-) -> [SVector<f32, 1>; T] {
-    let mut out = [SVector::zeros(); T];
-    for t in 0..T {
-        out[t] = Vector1::new(v[t]);
-    }
-    out
 }
 
 fn mat_to_array<const N: usize, const X: usize>(

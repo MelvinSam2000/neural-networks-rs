@@ -2,13 +2,11 @@ use nalgebra::SMatrix;
 use nalgebra::SVector;
 
 use super::NeuralNetwork;
-use crate::activation::noact::NoActivation;
-use crate::activation::sigmoid::Sigmoid;
+use crate::activation::relu::Relu;
 use crate::layers::conv::Conv2d;
+use crate::layers::dense::Dense;
 use crate::layers::maxpool::MaxPool2d;
 use crate::layers::relu2d::Relu2dLayer;
-use crate::layers::sequential::Sequential;
-use crate::layers::softmax::Softmax;
 use crate::loss::crossent::CrossEntropy;
 use crate::loss::LossFunction;
 use crate::optimizers::OptimizerFactory;
@@ -29,16 +27,18 @@ const SEQ_LAYER_INITIAL_DIM: usize =
 
 pub const DIGITS: usize = 10;
 
+pub const HIDDEN_LAYER_DIM: usize = 100;
+pub const HIDDEN_LAYER_NUM: usize = 2;
+
 pub struct MyCnn<
-    OPT: OptimizerFactory<100, SEQ_LAYER_INITIAL_DIM>
-        + OptimizerFactory<100, 1>
-        + OptimizerFactory<50, 100>
-        + OptimizerFactory<50, 1>
-        + OptimizerFactory<20, 50>
-        + OptimizerFactory<20, 1>
-        + OptimizerFactory<DIGITS, 20>
-        + OptimizerFactory<DIGITS, 1>
-        + OptimizerFactory<CONV_WEIGHT_DIM, CONV_WEIGHT_DIM>,
+    OPT: OptimizerFactory<CONV_WEIGHT_DIM, CONV_WEIGHT_DIM>
+        + OptimizerFactory<
+            HIDDEN_LAYER_DIM,
+            SEQ_LAYER_INITIAL_DIM,
+        > + OptimizerFactory<HIDDEN_LAYER_DIM, 1>
+        + OptimizerFactory<HIDDEN_LAYER_DIM, HIDDEN_LAYER_DIM>
+        + OptimizerFactory<DIGITS, HIDDEN_LAYER_DIM>
+        + OptimizerFactory<DIGITS, 1>,
 > {
     conv: [Conv2d<
         MNIST_IMAGE_DIM,
@@ -58,29 +58,26 @@ pub struct MyCnn<
         POOL_FILTER_DIM,
         POOL_FILTER_DIM,
     >; NUM_CONV],
-    s1: Sequential<
+    dense: Dense<
         SEQ_LAYER_INITIAL_DIM,
-        100,
-        Sigmoid,
+        DIGITS,
+        HIDDEN_LAYER_DIM,
+        HIDDEN_LAYER_NUM,
+        Relu,
         OPT,
     >,
-    s2: Sequential<100, 50, Sigmoid, OPT>,
-    s3: Sequential<50, 20, Sigmoid, OPT>,
-    s4: Sequential<20, DIGITS, NoActivation, OPT>,
-    softmax: Softmax<DIGITS>,
 }
 
 impl<OPT> NeuralNetwork<DIGITS> for MyCnn<OPT>
 where
-    OPT: OptimizerFactory<100, SEQ_LAYER_INITIAL_DIM>
-        + OptimizerFactory<100, 1>
-        + OptimizerFactory<50, 100>
-        + OptimizerFactory<50, 1>
-        + OptimizerFactory<20, 50>
-        + OptimizerFactory<20, 1>
-        + OptimizerFactory<DIGITS, 20>
-        + OptimizerFactory<DIGITS, 1>
-        + OptimizerFactory<CONV_WEIGHT_DIM, CONV_WEIGHT_DIM>,
+    OPT: OptimizerFactory<CONV_WEIGHT_DIM, CONV_WEIGHT_DIM>
+        + OptimizerFactory<
+            HIDDEN_LAYER_DIM,
+            SEQ_LAYER_INITIAL_DIM,
+        > + OptimizerFactory<HIDDEN_LAYER_DIM, 1>
+        + OptimizerFactory<HIDDEN_LAYER_DIM, HIDDEN_LAYER_DIM>
+        + OptimizerFactory<DIGITS, HIDDEN_LAYER_DIM>
+        + OptimizerFactory<DIGITS, 1>,
 {
     type ModelInput =
         SMatrix<f32, MNIST_IMAGE_DIM, MNIST_IMAGE_DIM>;
@@ -98,22 +95,13 @@ where
 
         let maxpool = [MaxPool2d::new(); NUM_CONV];
 
-        let s1 = Sequential::new();
-        let s2 = Sequential::new();
-        let s3 = Sequential::new();
-        let s4 = Sequential::new();
-
-        let softmax = Softmax::new();
+        let dense = Dense::new();
 
         Self {
             conv,
             relu,
             maxpool,
-            s1,
-            s2,
-            s3,
-            s4,
-            softmax,
+            dense,
         }
     }
 
@@ -131,11 +119,7 @@ where
             conv_results[i] = x;
         }
         let x = flatten(conv_results);
-        let x = self.s1.ff(x);
-        let x = self.s2.ff(x);
-        let x = self.s3.ff(x);
-        let x = self.s4.ff(x);
-        let x = self.softmax.ff(x);
+        let x = self.dense.ff(x);
         x
     }
 
@@ -145,11 +129,7 @@ where
         y_test: SVector<f32, DIGITS>,
     ) {
         let g = CrossEntropy::grad(y_out, y_test);
-        let g = self.softmax.bp(g);
-        let g = self.s4.bp(g);
-        let g = self.s3.bp(g);
-        let g = self.s2.bp(g);
-        let g = self.s1.bp(g);
+        let g = self.dense.bp(g);
         let g = unflatten(g);
         for i in 0..NUM_CONV {
             let g = self.maxpool[i].bp(g[i]);
